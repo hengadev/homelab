@@ -20,10 +20,10 @@
         upgrade: dist
         update_cache: false
 
-    - name: Ensure deploy user exists and is in sudo and docker groups
+    - name: Ensure deploy user exists and is in sudo group
       ansible.builtin.user:
         name: deploy
-        groups: sudo,docker
+        groups: sudo
         append: true
         state: present
 
@@ -73,10 +73,18 @@
         port: "443"
         proto: tcp
 
-    - name: Add Docker GPG key
-      ansible.builtin.apt_key:
+    - name: Create keyrings directory
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: "0755"
+
+    - name: Download Docker GPG key
+      ansible.builtin.get_url:
         url: https://download.docker.com/linux/ubuntu/gpg
-        state: present
+        dest: /etc/apt/keyrings/docker.asc
+        mode: "0644"
+        force: false
 
     - name: Add Docker apt repository
       ansible.builtin.apt_repository:
@@ -99,6 +107,12 @@
         name: docker
         state: started
         enabled: true
+
+    - name: Add deploy user to docker group
+      ansible.builtin.user:
+        name: deploy
+        groups: docker
+        append: true
 
     - name: Install fail2ban
       ansible.builtin.apt:
