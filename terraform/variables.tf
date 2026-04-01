@@ -47,3 +47,14 @@ variable "ssh_private_key_path" {
   type        = string
   description = "Local path to SSH private key"
 }
+
+variable "backup_s3_bucket" {
+  type        = string
+  description = "Name of the S3 bucket for Vaultwarden backups (must be globally unique)"
+}
+
+variable "aws_region" {
+  type        = string
+  description = "AWS region for the S3 backup bucket"
+  default     = "us-east-1"
+}

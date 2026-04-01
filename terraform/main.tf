@@ -6,6 +6,11 @@ provider "cloudflare" {
   api_token = var.cloudflare_api_token
 }
 
+provider "aws" {
+  region = var.aws_region
+  # Credentials read from environment: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+}
+
 # SSH Key resource
 resource "hcloud_ssh_key" "homelab" {
   name       = "homelab-deploy-key"
@@ -65,6 +70,43 @@ resource "hcloud_server" "homelab" {
       ssh_authorized_keys:
         - ${var.ssh_public_key}
   EOT
+}
+
+# S3 bucket for Vaultwarden backups
+resource "aws_s3_bucket" "backup" {
+  bucket = var.backup_s3_bucket
+
+  tags = {
+    Name       = "homelab-vaultwarden-backup"
+    managed-by = "terraform"
+  }
+}
+
+resource "aws_s3_bucket_versioning" "backup" {
+  bucket = aws_s3_bucket.backup.id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "backup" {
+  bucket = aws_s3_bucket.backup.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "backup" {
+  bucket = aws_s3_bucket.backup.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
 }
 
 # Cloudflare DNS records (proxied=false for Vaultwarden WebSocket support)

@@ -17,3 +17,8 @@ output "ssh_command" {
   description = "SSH command to connect to the server"
   value       = "ssh -i ${var.ssh_private_key_path} deploy@${hcloud_server.homelab.ipv4_address}"
 }
+
+output "backup_bucket_name" {
+  description = "S3 bucket name for Vaultwarden backups"
+  value       = aws_s3_bucket.backup.bucket
+}

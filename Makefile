@@ -26,6 +26,8 @@ generate-tfvars: ## Generate terraform.tfvars from .env
 	@echo "domain = \"$(DOMAIN)\"" >> terraform/terraform.tfvars
 	@echo "ssh_public_key = \"$(SSH_PUBLIC_KEY)\"" >> terraform/terraform.tfvars
 	@echo "ssh_private_key_path = \"$(SSH_PRIVATE_KEY_PATH)\"" >> terraform/terraform.tfvars
+	@echo "backup_s3_bucket     = \"$(BACKUP_S3_BUCKET)\"" >> terraform/terraform.tfvars
+	@echo "aws_region           = \"$(AWS_DEFAULT_REGION)\"" >> terraform/terraform.tfvars
 	@chmod 600 terraform/terraform.tfvars
 
 generate-inventory: ## Generate Ansible inventory from Terraform output
