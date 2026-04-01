@@ -1,0 +1,14 @@
+# Terraform variable values file
+# NOTE: This file is for documentation only.
+# The actual terraform.tfvars is generated automatically by `make init` from .env
+# Do not create this file manually.
+
+# hcloud_token       = "your_hetzner_api_token"
+# cloudflare_api_token = "your_cloudflare_api_token"
+# cloudflare_zone_id  = "your_zone_id"
+# domain              = "example.com"
+# ssh_public_key      = "ssh-ed25519 AAAA... user@host"
+# server_type         = "cx22"
+# server_location     = "nbg1"
+# server_image        = "ubuntu-22.04"
+# ssh_private_key_path = "~/.ssh/id_ed25519"
