@@ -1,0 +1,76 @@
+.PHONY: help init setup deploy update destroy ssh logs generate-tfvars generate-inventory
+
+include .env
+export
+
+SERVER_IP := $(shell cd terraform && terraform output -raw server_ip 2>/dev/null)
+
+ANSIBLE_VARS = -e domain=$(DOMAIN) \
+               -e admin_token=$(ADMIN_TOKEN) \
+               -e admin_email=$(ADMIN_EMAIL) \
+               -e aws_access_key_id=$(AWS_ACCESS_KEY_ID) \
+               -e aws_secret_access_key=$(AWS_SECRET_ACCESS_KEY) \
+               -e aws_default_region=$(AWS_DEFAULT_REGION) \
+               -e backup_s3_bucket=$(BACKUP_S3_BUCKET) \
+               -e backup_passphrase=$(BACKUP_PASSPHRASE) \
+               -e github_username=$(GITHUB_USERNAME) \
+               -e ssh_public_key="$(SSH_PUBLIC_KEY)"
+
+help: ## Show this help message
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
+
+generate-tfvars: ## Generate terraform.tfvars from .env
+	@echo "hcloud_token = \"$(HCLOUD_TOKEN)\"" > terraform/terraform.tfvars
+	@echo "cloudflare_api_token = \"$(CLOUDFLARE_API_TOKEN)\"" >> terraform/terraform.tfvars
+	@echo "cloudflare_zone_id = \"$(CLOUDFLARE_ZONE_ID)\"" >> terraform/terraform.tfvars
+	@echo "domain = \"$(DOMAIN)\"" >> terraform/terraform.tfvars
+	@echo "ssh_public_key = \"$(SSH_PUBLIC_KEY)\"" >> terraform/terraform.tfvars
+	@echo "ssh_private_key_path = \"$(SSH_PRIVATE_KEY_PATH)\"" >> terraform/terraform.tfvars
+	@chmod 600 terraform/terraform.tfvars
+
+generate-inventory: ## Generate Ansible inventory from Terraform output
+	@mkdir -p ansible/inventory
+	@echo "all:" > ansible/inventory/hosts.yml
+	@echo "  hosts:" >> ansible/inventory/hosts.yml
+	@echo "    homelab:" >> ansible/inventory/hosts.yml
+	@echo "      ansible_host: $(SERVER_IP)" >> ansible/inventory/hosts.yml
+	@echo "      ansible_user: deploy" >> ansible/inventory/hosts.yml
+	@echo "      ansible_ssh_private_key_file: $(SSH_PRIVATE_KEY_PATH)" >> ansible/inventory/hosts.yml
+	@echo "      ansible_ssh_common_args: '-o StrictHostKeyChecking=accept-new'" >> ansible/inventory/hosts.yml
+
+init: generate-tfvars ## Provision infrastructure (first time)
+	@echo "Initializing Terraform..."
+	@cd terraform && terraform init
+	@echo "Planning Terraform changes..."
+	@cd terraform && terraform plan
+	@echo "Applying Terraform configuration..."
+	@cd terraform && terraform apply -auto-approve
+	@$(MAKE) generate-inventory
+	@echo "Waiting for server to be ready..."
+	@sleep 30
+	@echo "Infrastructure provisioned. Run 'make setup' to configure the server."
+
+setup: generate-inventory ## Configure server with Ansible
+	@echo "Running setup playbook..."
+	@ansible-playbook -i ansible/inventory/hosts.yml ansible/setup.yml $(ANSIBLE_VARS)
+
+deploy: generate-inventory ## Deploy Docker services
+	@echo "Running deploy playbook..."
+	@ansible-playbook -i ansible/inventory/hosts.yml ansible/deploy.yml $(ANSIBLE_VARS)
+
+update: ## Update Docker services on server
+	@ssh -i $(SSH_PRIVATE_KEY_PATH) deploy@$(SERVER_IP) "cd /opt/homelab && docker compose pull && docker compose up -d"
+
+destroy: generate-tfvars ## Destroy all infrastructure
+	@echo "WARNING: This will destroy all infrastructure!"
+	@read -p "Are you sure? [y/N] " -n 1 -r; \
+	echo; \
+	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
+		cd terraform && terraform destroy; \
+	fi
+
+ssh: ## SSH into the server
+	@ssh -i $(SSH_PRIVATE_KEY_PATH) deploy@$(SERVER_IP)
+
+logs: ## View Docker logs
+	@ssh -i $(SSH_PRIVATE_KEY_PATH) deploy@$(SERVER_IP) "cd /opt/homelab && docker compose logs -f"
