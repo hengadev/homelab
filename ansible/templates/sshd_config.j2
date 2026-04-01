@@ -1,0 +1,9 @@
+# Homelab SSH hardening configuration
+# Drop-in file at /etc/ssh/sshd_config.d/99-homelab.conf
+
+PermitRootLogin no
+PasswordAuthentication no
+PubkeyAuthentication yes
+X11Forwarding no
+MaxAuthTries 3
+LoginGraceTime 30
