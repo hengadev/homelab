@@ -1,0 +1,22 @@
+# Environment variables
+.env
+
+# Terraform
+*.tfvars
+!*.tfvars.example
+terraform.tfstate
+terraform.tfstate.*
+.terraform/
+
+# Ansible
+ansible/inventory/hosts.yml
+ansible/.env.yml
+
+# Backup artifacts
+*.gpg
+*.tar.gz
+
+# OS
+.DS_Store
+*.swp
+*~
