@@ -13,8 +13,14 @@ ANSIBLE_VARS = -e domain=$(DOMAIN) \
                -e aws_default_region=$(AWS_DEFAULT_REGION) \
                -e backup_s3_bucket=$(BACKUP_S3_BUCKET) \
                -e backup_passphrase=$(BACKUP_PASSPHRASE) \
-               -e github_username=$(GITHUB_USERNAME) \
-               -e ssh_public_key="$(SSH_PUBLIC_KEY)"
+               -e github_username=$(GITHUB_USERNAME)
+
+# SSH_PUBLIC_KEY contains spaces so it must be passed via a vars file, not -e
+ANSIBLE_SSH_VARS_FILE := /tmp/homelab_ssh_vars.yml
+
+define write-ssh-vars
+	@printf 'ssh_public_key: %s\n' "$${SSH_PUBLIC_KEY}" > $(ANSIBLE_SSH_VARS_FILE)
+endef
 
 help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
@@ -59,11 +65,15 @@ init: generate-tfvars ## Provision infrastructure (first time)
 
 setup: generate-inventory ## Configure server with Ansible
 	@echo "Running setup playbook..."
-	@ansible-playbook -i ansible/inventory/hosts.yml ansible/setup.yml $(ANSIBLE_VARS)
+	$(write-ssh-vars)
+	@ansible-playbook -i ansible/inventory/hosts.yml ansible/setup.yml $(ANSIBLE_VARS) --extra-vars @$(ANSIBLE_SSH_VARS_FILE)
+	@rm -f $(ANSIBLE_SSH_VARS_FILE)
 
 deploy: generate-inventory ## Deploy Docker services
 	@echo "Running deploy playbook..."
-	@ansible-playbook -i ansible/inventory/hosts.yml ansible/deploy.yml $(ANSIBLE_VARS)
+	$(write-ssh-vars)
+	@ansible-playbook -i ansible/inventory/hosts.yml ansible/deploy.yml $(ANSIBLE_VARS) --extra-vars @$(ANSIBLE_SSH_VARS_FILE)
+	@rm -f $(ANSIBLE_SSH_VARS_FILE)
 
 update: ## Update Docker services on server
 	@ssh -i $(SSH_PRIVATE_KEY_PATH) deploy@$(SERVER_IP) "cd /opt/homelab && docker compose pull && docker compose up -d"
