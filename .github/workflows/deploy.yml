@@ -1,0 +1,74 @@
+name: Deploy Homelab
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Ansible and collections
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ansible
+          ansible-galaxy collection install community.general ansible.posix
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/homelab_key
+          chmod 600 ~/.ssh/homelab_key
+
+      - name: Generate Ansible inventory
+        run: |
+          mkdir -p ansible/inventory
+          cat > ansible/inventory/hosts.yml <<EOF
+          all:
+            hosts:
+              homelab:
+                ansible_host: ${{ secrets.SERVER_IP }}
+                ansible_user: deploy
+                ansible_ssh_private_key_file: ~/.ssh/homelab_key
+                ansible_ssh_common_args: '-o StrictHostKeyChecking=accept-new'
+          EOF
+
+      - name: Generate .env file
+        run: |
+          cat > .env <<EOF
+          DOMAIN=${{ secrets.DOMAIN }}
+          ADMIN_TOKEN=${{ secrets.ADMIN_TOKEN }}
+          ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}
+          AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION=${{ secrets.AWS_DEFAULT_REGION }}
+          BACKUP_S3_BUCKET=${{ secrets.BACKUP_S3_BUCKET }}
+          BACKUP_PASSPHRASE=${{ secrets.BACKUP_PASSPHRASE }}
+          GITHUB_USERNAME=${{ secrets.GITHUB_USERNAME }}
+          SSH_PUBLIC_KEY=${{ secrets.SSH_PUBLIC_KEY }}
+          EOF
+
+      - name: Run Ansible deploy playbook
+        run: |
+          ansible-playbook -i ansible/inventory/hosts.yml ansible/deploy.yml \
+            -e domain=${{ secrets.DOMAIN }} \
+            -e admin_token=${{ secrets.ADMIN_TOKEN }} \
+            -e admin_email=${{ secrets.ADMIN_EMAIL }} \
+            -e aws_access_key_id=${{ secrets.AWS_ACCESS_KEY_ID }} \
+            -e aws_secret_access_key=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
+            -e aws_default_region=${{ secrets.AWS_DEFAULT_REGION }} \
+            -e backup_s3_bucket=${{ secrets.BACKUP_S3_BUCKET }} \
+            -e backup_passphrase=${{ secrets.BACKUP_PASSPHRASE }} \
+            -e github_username=${{ secrets.GITHUB_USERNAME }} \
+            -e ssh_public_key="${{ secrets.SSH_PUBLIC_KEY }}"
+
+      - name: Verify deployment
+        run: |
+          ssh -i ~/.ssh/homelab_key \
+            -o StrictHostKeyChecking=accept-new \
+            deploy@${{ secrets.SERVER_IP }} \
+            "cd /opt/homelab && docker compose ps"
