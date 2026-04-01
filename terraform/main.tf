@@ -8,7 +8,7 @@ provider "cloudflare" {
 
 provider "aws" {
   region = var.aws_region
-  # Credentials read from environment: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+  # Credentials read from environment: AWS_PROFILE (local CLI profile)
 }
 
 # SSH Key resource
@@ -107,6 +107,40 @@ resource "aws_s3_bucket_public_access_block" "backup" {
   block_public_policy     = true
   ignore_public_acls      = true
   restrict_public_buckets = true
+}
+
+# Dedicated IAM user for the backup container (scoped to backup bucket only)
+resource "aws_iam_user" "backup" {
+  name = "homelab-vaultwarden-backup"
+
+  tags = {
+    managed-by = "terraform"
+  }
+}
+
+resource "aws_iam_user_policy" "backup" {
+  name = "homelab-vaultwarden-backup-s3"
+  user = aws_iam_user.backup.name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = ["s3:PutObject", "s3:GetObject", "s3:DeleteObject"]
+        Resource = "${aws_s3_bucket.backup.arn}/*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = "s3:ListBucket"
+        Resource = aws_s3_bucket.backup.arn
+      }
+    ]
+  })
+}
+
+resource "aws_iam_access_key" "backup" {
+  user = aws_iam_user.backup.name
 }
 
 # Cloudflare DNS records (proxied=false for Vaultwarden WebSocket support)

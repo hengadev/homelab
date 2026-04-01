@@ -22,3 +22,14 @@ output "backup_bucket_name" {
   description = "S3 bucket name for Vaultwarden backups"
   value       = aws_s3_bucket.backup.bucket
 }
+
+output "backup_iam_access_key_id" {
+  description = "AWS Access Key ID for the backup container — copy to BACKUP_AWS_ACCESS_KEY_ID in .env"
+  value       = aws_iam_access_key.backup.id
+}
+
+output "backup_iam_secret_access_key" {
+  description = "AWS Secret Access Key for the backup container — copy to BACKUP_AWS_SECRET_ACCESS_KEY in .env"
+  value       = aws_iam_access_key.backup.secret
+  sensitive   = true
+}
