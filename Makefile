@@ -48,6 +48,11 @@ init: generate-tfvars ## Provision infrastructure (first time)
 	@echo "Applying Terraform configuration..."
 	@cd terraform && terraform apply -auto-approve
 	@$(MAKE) generate-inventory
+	@echo "Injecting generated backup IAM credentials into .env..."
+	@KEY_ID=$$(cd terraform && terraform output -raw backup_iam_access_key_id) && \
+	 SECRET=$$(cd terraform && terraform output -raw backup_iam_secret_access_key) && \
+	 sed -i "s|^BACKUP_AWS_ACCESS_KEY_ID=.*|BACKUP_AWS_ACCESS_KEY_ID=$$KEY_ID|" .env && \
+	 sed -i "s|^BACKUP_AWS_SECRET_ACCESS_KEY=.*|BACKUP_AWS_SECRET_ACCESS_KEY=$$SECRET|" .env
 	@echo "Waiting for server to be ready..."
 	@sleep 30
 	@echo "Infrastructure provisioned. Run 'make setup' to configure the server."
