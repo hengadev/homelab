@@ -43,8 +43,8 @@ jobs:
           DOMAIN=${{ secrets.DOMAIN }}
           ADMIN_TOKEN=${{ secrets.ADMIN_TOKEN }}
           ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}
-          AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          BACKUP_AWS_ACCESS_KEY_ID=${{ secrets.BACKUP_AWS_ACCESS_KEY_ID }}
+          BACKUP_AWS_SECRET_ACCESS_KEY=${{ secrets.BACKUP_AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION=${{ secrets.AWS_DEFAULT_REGION }}
           BACKUP_S3_BUCKET=${{ secrets.BACKUP_S3_BUCKET }}
           BACKUP_PASSPHRASE=${{ secrets.BACKUP_PASSPHRASE }}
@@ -58,8 +58,8 @@ jobs:
             -e domain=${{ secrets.DOMAIN }} \
             -e admin_token=${{ secrets.ADMIN_TOKEN }} \
             -e admin_email=${{ secrets.ADMIN_EMAIL }} \
-            -e aws_access_key_id=${{ secrets.AWS_ACCESS_KEY_ID }} \
-            -e aws_secret_access_key=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
+            -e backup_aws_access_key_id=${{ secrets.BACKUP_AWS_ACCESS_KEY_ID }} \
+            -e backup_aws_secret_access_key=${{ secrets.BACKUP_AWS_SECRET_ACCESS_KEY }} \
             -e aws_default_region=${{ secrets.AWS_DEFAULT_REGION }} \
             -e backup_s3_bucket=${{ secrets.BACKUP_S3_BUCKET }} \
             -e backup_passphrase=${{ secrets.BACKUP_PASSPHRASE }} \

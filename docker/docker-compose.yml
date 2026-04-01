@@ -44,8 +44,13 @@ services:
     volumes:
       - vaultwarden_data:/data:ro
       - ./backup.sh:/backup.sh:ro
-    env_file:
-      - .env
+    environment:
+      # Map dedicated backup IAM credentials to standard AWS env vars inside the container
+      - AWS_ACCESS_KEY_ID=${BACKUP_AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${BACKUP_AWS_SECRET_ACCESS_KEY}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+      - BACKUP_S3_BUCKET=${BACKUP_S3_BUCKET}
+      - BACKUP_PASSPHRASE=${BACKUP_PASSPHRASE}
     entrypoint:
       - /bin/sh
       - -c

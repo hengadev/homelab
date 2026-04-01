@@ -8,8 +8,8 @@ SERVER_IP := $(shell cd terraform && terraform output -raw server_ip 2>/dev/null
 ANSIBLE_VARS = -e domain=$(DOMAIN) \
                -e admin_token=$(ADMIN_TOKEN) \
                -e admin_email=$(ADMIN_EMAIL) \
-               -e aws_access_key_id=$(AWS_ACCESS_KEY_ID) \
-               -e aws_secret_access_key=$(AWS_SECRET_ACCESS_KEY) \
+               -e backup_aws_access_key_id=$(BACKUP_AWS_ACCESS_KEY_ID) \
+               -e backup_aws_secret_access_key=$(BACKUP_AWS_SECRET_ACCESS_KEY) \
                -e aws_default_region=$(AWS_DEFAULT_REGION) \
                -e backup_s3_bucket=$(BACKUP_S3_BUCKET) \
                -e backup_passphrase=$(BACKUP_PASSPHRASE) \
