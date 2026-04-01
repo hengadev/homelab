@@ -28,13 +28,13 @@ variable "ssh_public_key" {
 variable "server_type" {
   type        = string
   description = "Hetzner server type"
-  default     = "cx22"
+  default     = "cx23"
 }
 
 variable "server_location" {
   type        = string
   description = "Hetzner datacenter location"
-  default     = "nbg1"
+  default     = "fsn1"
 }
 
 variable "server_image" {
