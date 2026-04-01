@@ -149,8 +149,8 @@ resource "cloudflare_record" "root" {
   name    = "@"
   value   = hcloud_server.homelab.ipv4_address
   type    = "A"
-  ttl     = 300
-  proxied = false
+  ttl     = 1
+  proxied = true
 }
 
 resource "cloudflare_record" "vault" {
