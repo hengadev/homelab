@@ -1,4 +1,4 @@
-.PHONY: help init setup deploy update destroy ssh logs generate-tfvars generate-inventory
+.PHONY: help init setup deploy update destroy ssh logs generate-tfvars generate-inventory reload-portfolio
 
 include .env
 export
@@ -74,6 +74,9 @@ deploy: generate-inventory ## Deploy Docker services
 	$(write-ssh-vars)
 	@ansible-playbook -i ansible/inventory/hosts.yml ansible/deploy.yml $(ANSIBLE_VARS) --extra-vars @$(ANSIBLE_SSH_VARS_FILE)
 	@rm -f $(ANSIBLE_SSH_VARS_FILE)
+
+reload-portfolio: ## Pull latest portfolio image and restart the container
+	@ssh -i $(SSH_PRIVATE_KEY_PATH) deploy@$(SERVER_IP) "cd /opt/homelab && docker compose pull portfolio && docker compose up -d --no-deps portfolio"
 
 update: ## Update Docker services on server
 	@ssh -i $(SSH_PRIVATE_KEY_PATH) deploy@$(SERVER_IP) "cd /opt/homelab && docker compose pull && docker compose up -d"
