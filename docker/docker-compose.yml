@@ -32,7 +32,7 @@ services:
       - internal
 
   portfolio:
-    image: nginx:alpine
+    image: henga/portfolio:latest
     container_name: homelab-portfolio
     restart: unless-stopped
     networks:
