@@ -1,0 +1,69 @@
+---
+# Homelab Docker services deployment playbook
+# Run with: make deploy (variables passed via -e from Makefile)
+- name: Deploy Docker services
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Create /opt/homelab directory
+      ansible.builtin.file:
+        path: /opt/homelab
+        state: directory
+        owner: deploy
+        group: deploy
+        mode: "0750"
+
+    - name: Create vaultwarden data directory
+      ansible.builtin.file:
+        path: /opt/homelab/data/vaultwarden
+        state: directory
+        owner: deploy
+        group: deploy
+        mode: "0750"
+
+    - name: Copy docker-compose.yml to server
+      ansible.builtin.copy:
+        src: ../docker/docker-compose.yml
+        dest: /opt/homelab/docker-compose.yml
+        owner: deploy
+        group: deploy
+        mode: "0644"
+
+    - name: Copy Caddyfile to server
+      ansible.builtin.copy:
+        src: ../docker/Caddyfile
+        dest: /opt/homelab/Caddyfile
+        owner: deploy
+        group: deploy
+        mode: "0644"
+
+    - name: Copy backup script to server
+      ansible.builtin.copy:
+        src: ../docker/backup/backup.sh
+        dest: /opt/homelab/backup.sh
+        owner: deploy
+        group: deploy
+        mode: "0755"
+
+    - name: Template .env file to server
+      ansible.builtin.template:
+        src: templates/env.j2
+        dest: /opt/homelab/.env
+        owner: deploy
+        group: deploy
+        mode: "0600"
+
+    - name: Pull latest Docker images
+      ansible.builtin.command:
+        cmd: docker compose pull
+        chdir: /opt/homelab
+      become_user: deploy
+      changed_when: true
+
+    - name: Start Docker services
+      ansible.builtin.command:
+        cmd: docker compose up -d --remove-orphans
+        chdir: /opt/homelab
+      become_user: deploy
+      changed_when: true
