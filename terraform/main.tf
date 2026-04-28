@@ -161,3 +161,50 @@ resource "cloudflare_record" "vault" {
   ttl     = 300
   proxied = false
 }
+
+# Cluo production
+resource "cloudflare_record" "cluo_api" {
+  zone_id = var.cloudflare_zone_id
+  name    = "api"
+  value   = hcloud_server.homelab.ipv4_address
+  type    = "A"
+  ttl     = 1
+  proxied = true
+}
+
+resource "cloudflare_record" "cluo_mobile" {
+  zone_id = var.cloudflare_zone_id
+  name    = "mobile"
+  value   = hcloud_server.homelab.ipv4_address
+  type    = "A"
+  ttl     = 1
+  proxied = true
+}
+
+# Cluo staging
+resource "cloudflare_record" "cluo_staging" {
+  zone_id = var.cloudflare_zone_id
+  name    = "staging"
+  value   = hcloud_server.homelab.ipv4_address
+  type    = "A"
+  ttl     = 1
+  proxied = true
+}
+
+resource "cloudflare_record" "cluo_staging_api" {
+  zone_id = var.cloudflare_zone_id
+  name    = "staging-api"
+  value   = hcloud_server.homelab.ipv4_address
+  type    = "A"
+  ttl     = 1
+  proxied = true
+}
+
+resource "cloudflare_record" "cluo_staging_mobile" {
+  zone_id = var.cloudflare_zone_id
+  name    = "staging-mobile"
+  value   = hcloud_server.homelab.ipv4_address
+  type    = "A"
+  ttl     = 1
+  proxied = true
+}
