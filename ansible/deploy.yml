@@ -6,6 +6,19 @@
   become: true
 
   tasks:
+    # =========================================================================
+    # Prerequisites
+    # =========================================================================
+    - name: Ensure proxy Docker network exists
+      ansible.builtin.command:
+        cmd: docker network create proxy --driver bridge
+      register: proxy_network
+      failed_when: proxy_network.rc != 0 and 'already exists' not in proxy_network.stderr
+      changed_when: proxy_network.rc == 0
+
+    # =========================================================================
+    # Homelab services
+    # =========================================================================
     - name: Create /opt/homelab directory
       ansible.builtin.file:
         path: /opt/homelab
@@ -72,5 +85,87 @@
       ansible.builtin.command:
         cmd: docker exec homelab-caddy caddy reload --config /etc/caddy/Caddyfile
         chdir: /opt/homelab
+      become_user: deploy
+      changed_when: true
+
+    # =========================================================================
+    # Cluo production
+    # =========================================================================
+    - name: Create /opt/cluo directory
+      ansible.builtin.file:
+        path: /opt/cluo
+        state: directory
+        owner: deploy
+        group: deploy
+        mode: "0750"
+
+    - name: Copy production docker-compose for cluo
+      ansible.builtin.copy:
+        src: ../docker/cluo/prod.docker-compose.yml
+        dest: /opt/cluo/docker-compose.yml
+        owner: deploy
+        group: deploy
+        mode: "0644"
+
+    - name: Template production .env for cluo
+      ansible.builtin.template:
+        src: templates/cluo-prod.env.j2
+        dest: /opt/cluo/.env
+        owner: deploy
+        group: deploy
+        mode: "0600"
+
+    - name: Pull cluo production images
+      ansible.builtin.command:
+        cmd: docker compose pull
+        chdir: /opt/cluo
+      become_user: deploy
+      changed_when: true
+
+    - name: Start cluo production services
+      ansible.builtin.command:
+        cmd: docker compose up -d --remove-orphans
+        chdir: /opt/cluo
+      become_user: deploy
+      changed_when: true
+
+    # =========================================================================
+    # Cluo staging
+    # =========================================================================
+    - name: Create /opt/cluo-staging directory
+      ansible.builtin.file:
+        path: /opt/cluo-staging
+        state: directory
+        owner: deploy
+        group: deploy
+        mode: "0750"
+
+    - name: Copy staging docker-compose for cluo
+      ansible.builtin.copy:
+        src: ../docker/cluo/staging.docker-compose.yml
+        dest: /opt/cluo-staging/docker-compose.yml
+        owner: deploy
+        group: deploy
+        mode: "0644"
+
+    - name: Template staging .env for cluo
+      ansible.builtin.template:
+        src: templates/cluo-staging.env.j2
+        dest: /opt/cluo-staging/.env
+        owner: deploy
+        group: deploy
+        mode: "0600"
+
+    - name: Pull cluo staging images
+      ansible.builtin.command:
+        cmd: docker compose pull
+        chdir: /opt/cluo-staging
+      become_user: deploy
+      changed_when: true
+
+    - name: Start cluo staging services
+      ansible.builtin.command:
+        cmd: docker compose up -d --remove-orphans
+        chdir: /opt/cluo-staging
       become_user: deploy
       changed_when: true
