@@ -3,7 +3,58 @@
 }
 
 {$DOMAIN} {
-    reverse_proxy portfolio:3000
+    reverse_proxy cluo-prod-web:3000
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy no-referrer
+        Permissions-Policy "geolocation=(), microphone=(), camera=()"
+    }
+}
+
+api.{$DOMAIN} {
+    reverse_proxy cluo-prod-api:8080
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options nosniff
+        Referrer-Policy no-referrer
+    }
+}
+
+mobile.{$DOMAIN} {
+    reverse_proxy cluo-prod-mobile:3000
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy no-referrer
+        Permissions-Policy "geolocation=(), microphone=(), camera=()"
+    }
+}
+
+staging.{$DOMAIN} {
+    reverse_proxy cluo-staging-web:3000
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy no-referrer
+        Permissions-Policy "geolocation=(), microphone=(), camera=()"
+    }
+}
+
+staging-api.{$DOMAIN} {
+    reverse_proxy cluo-staging-api:8080
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options nosniff
+        Referrer-Policy no-referrer
+    }
+}
+
+staging-mobile.{$DOMAIN} {
+    reverse_proxy cluo-staging-mobile:3000
     header {
         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
         X-Content-Type-Options nosniff

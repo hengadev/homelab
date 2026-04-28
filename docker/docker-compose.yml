@@ -15,6 +15,7 @@ services:
     restart: unless-stopped
     networks:
       - internal
+      - proxy
 
   vaultwarden:
     image: vaultwarden/server:latest
@@ -65,6 +66,8 @@ services:
 networks:
   internal:
     driver: bridge
+  proxy:
+    external: true
 
 volumes:
   caddy_data:

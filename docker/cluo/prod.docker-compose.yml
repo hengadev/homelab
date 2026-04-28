@@ -1,0 +1,86 @@
+services:
+  cluo-prod-postgres:
+    image: postgres:16-alpine
+    container_name: cluo-prod-postgres
+    environment:
+      POSTGRES_USER: ${CLUO_DB_USER}
+      POSTGRES_PASSWORD: ${CLUO_DB_PASSWORD}
+      POSTGRES_DB: ${CLUO_DB_NAME}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${CLUO_DB_USER:-cluo}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - cluo-prod-internal
+
+  cluo-prod-redis:
+    image: redis:7-alpine
+    container_name: cluo-prod-redis
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - cluo-prod-internal
+
+  cluo-prod-api:
+    image: ${CLUO_REGISTRY}/cluo-api:${CLUO_PROD_TAG:-latest}
+    container_name: cluo-prod-api
+    env_file: .env
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      cluo-prod-postgres:
+        condition: service_healthy
+      cluo-prod-redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - cluo-prod-internal
+      - proxy
+
+  cluo-prod-web:
+    image: ${CLUO_REGISTRY}/cluo-web:${CLUO_PROD_TAG:-latest}
+    container_name: cluo-prod-web
+    env_file: .env
+    ports:
+      - "127.0.0.1:3001:3000"
+    depends_on:
+      - cluo-prod-api
+    restart: unless-stopped
+    networks:
+      - cluo-prod-internal
+      - proxy
+
+  cluo-prod-mobile:
+    image: ${CLUO_REGISTRY}/cluo-mobile:${CLUO_PROD_TAG:-latest}
+    container_name: cluo-prod-mobile
+    env_file: .env
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      - cluo-prod-api
+    restart: unless-stopped
+    networks:
+      - cluo-prod-internal
+      - proxy
+
+networks:
+  cluo-prod-internal:
+    driver: bridge
+  proxy:
+    external: true
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
