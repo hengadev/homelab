@@ -1,4 +1,4 @@
-.PHONY: help init setup deploy update destroy ssh logs generate-tfvars generate-inventory reload-portfolio
+.PHONY: help init setup deploy update destroy ssh logs generate-tfvars generate-inventory reload-portfolio rebuild-cluo-prod rebuild-cluo-staging logs-cluo-prod logs-cluo-staging
 
 include .env
 export
@@ -13,7 +13,16 @@ ANSIBLE_VARS = -e domain=$(DOMAIN) \
                -e aws_default_region=$(AWS_DEFAULT_REGION) \
                -e backup_s3_bucket=$(BACKUP_S3_BUCKET) \
                -e backup_passphrase=$(BACKUP_PASSPHRASE) \
-               -e github_username=$(GITHUB_USERNAME)
+               -e github_username=$(GITHUB_USERNAME) \
+               -e cluo_registry=$(CLUO_REGISTRY) \
+               -e cluo_prod_tag=$(CLUO_PROD_TAG) \
+               -e cluo_staging_tag=$(CLUO_STAGING_TAG) \
+               -e cluo_prod_db_name=$(CLUO_PROD_DB_NAME) \
+               -e cluo_prod_db_user=$(CLUO_PROD_DB_USER) \
+               -e cluo_prod_db_password=$(CLUO_PROD_DB_PASSWORD) \
+               -e cluo_staging_db_name=$(CLUO_STAGING_DB_NAME) \
+               -e cluo_staging_db_user=$(CLUO_STAGING_DB_USER) \
+               -e cluo_staging_db_password=$(CLUO_STAGING_DB_PASSWORD)
 
 # SSH_PUBLIC_KEY contains spaces so it must be passed via a vars file, not -e
 ANSIBLE_SSH_VARS_FILE := /tmp/homelab_ssh_vars.yml
@@ -94,3 +103,15 @@ ssh: ## SSH into the server
 
 logs: ## View Docker logs
 	@ssh -i $(SSH_PRIVATE_KEY_PATH) deploy@$(SERVER_IP) "cd /opt/homelab && docker compose logs -f"
+
+rebuild-cluo-prod: ## Pull latest images and restart cluo production
+	@ssh -i $(SSH_PRIVATE_KEY_PATH) deploy@$(SERVER_IP) "cd /opt/cluo && docker compose pull && docker compose up -d --remove-orphans"
+
+rebuild-cluo-staging: ## Pull latest images and restart cluo staging
+	@ssh -i $(SSH_PRIVATE_KEY_PATH) deploy@$(SERVER_IP) "cd /opt/cluo-staging && docker compose pull && docker compose up -d --remove-orphans"
+
+logs-cluo-prod: ## View cluo production logs
+	@ssh -i $(SSH_PRIVATE_KEY_PATH) deploy@$(SERVER_IP) "cd /opt/cluo && docker compose logs -f"
+
+logs-cluo-staging: ## View cluo staging logs
+	@ssh -i $(SSH_PRIVATE_KEY_PATH) deploy@$(SERVER_IP) "cd /opt/cluo-staging && docker compose logs -f"
