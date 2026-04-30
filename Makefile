@@ -96,11 +96,11 @@ update: ## Update Docker services on server
 
 destroy: generate-tfvars ## Destroy all infrastructure
 	@echo "WARNING: This will destroy all infrastructure!"
-	@read -p "Are you sure? [y/N] " -n 1 -r; \
+	@bash -c 'read -p "Are you sure? [y/N] " -n 1 -r; \
 	echo; \
 	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
 		cd terraform && terraform destroy; \
-	fi
+	fi'
 
 ssh: ## SSH into the server
 	@ssh -i $(SSH_PRIVATE_KEY_PATH) deploy@$(SERVER_IP)
