@@ -115,6 +115,27 @@
       delay: 2
       changed_when: false
 
+    - name: Check Caddy container status if not running
+      ansible.builtin.shell:
+        cmd: |
+          echo "=== Caddy container status ==="
+          docker ps -a --filter "name=homelab-caddy"
+          echo "=== Caddy logs ==="
+          docker logs homelab-caddy --tail 50
+      register: caddy_debug
+      when: caddy_status.rc != 0
+      changed_when: false
+
+    - name: Display Caddy debug info
+      ansible.builtin.debug:
+        msg: "{{ caddy_debug.stdout_lines }}"
+      when: caddy_status.rc != 0
+
+    - name: Fail if Caddy is not running
+      ansible.builtin.fail:
+        msg: "Caddy container failed to start. Check logs above."
+      when: caddy_status.rc != 0
+
     - name: Reload Caddy config
       ansible.builtin.command:
         cmd: docker exec homelab-caddy caddy reload --config /etc/caddy/Caddyfile
