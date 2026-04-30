@@ -2,7 +2,8 @@
     email {$ADMIN_EMAIL}
 }
 
-{$DOMAIN} {
+# Cluo app (clientvault.fr)
+{$CLUO_DOMAIN} {
     reverse_proxy cluo-prod-web:3000
     header {
         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
@@ -13,7 +14,7 @@
     }
 }
 
-api.{$DOMAIN} {
+api.{$CLUO_DOMAIN} {
     reverse_proxy cluo-prod-api:8080
     header {
         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
@@ -22,7 +23,7 @@ api.{$DOMAIN} {
     }
 }
 
-mobile.{$DOMAIN} {
+mobile.{$CLUO_DOMAIN} {
     reverse_proxy cluo-prod-mobile:3000
     header {
         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
@@ -33,7 +34,7 @@ mobile.{$DOMAIN} {
     }
 }
 
-staging.{$DOMAIN} {
+staging.{$CLUO_DOMAIN} {
     reverse_proxy cluo-staging-web:3000
     header {
         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
@@ -44,7 +45,7 @@ staging.{$DOMAIN} {
     }
 }
 
-staging-api.{$DOMAIN} {
+staging-api.{$CLUO_DOMAIN} {
     reverse_proxy cluo-staging-api:8080
     header {
         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
@@ -53,7 +54,7 @@ staging-api.{$DOMAIN} {
     }
 }
 
-staging-mobile.{$DOMAIN} {
+staging-mobile.{$CLUO_DOMAIN} {
     reverse_proxy cluo-staging-mobile:3000
     header {
         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
