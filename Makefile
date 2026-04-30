@@ -22,7 +22,8 @@ ANSIBLE_VARS = -e domain=$(DOMAIN) \
                -e cluo_prod_db_password=$(CLUO_PROD_DB_PASSWORD) \
                -e cluo_staging_db_name=$(CLUO_STAGING_DB_NAME) \
                -e cluo_staging_db_user=$(CLUO_STAGING_DB_USER) \
-               -e cluo_staging_db_password=$(CLUO_STAGING_DB_PASSWORD)
+               -e cluo_staging_db_password=$(CLUO_STAGING_DB_PASSWORD) \
+	               -e cluo_domain=$(CLUO_DOMAIN)
 
 # SSH_PUBLIC_KEY contains spaces so it must be passed via a vars file, not -e
 ANSIBLE_SSH_VARS_FILE := /tmp/homelab_ssh_vars.yml
