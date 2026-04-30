@@ -1,0 +1,18 @@
+# Vault Configuration for Homelab
+# Managed by Ansible - DO NOT EDIT MANUALLY
+
+ui = true
+
+listener "tcp" {
+  address     = "0.0.0.0:8200"
+  tls_disable = "true"
+}
+
+# File storage for single-node vault
+storage "file" {
+  path = "/vault/file"
+}
+
+api_addr      = "http://homelab-vault:8200"
+disable_mlock = true
+log_level     = "info"

@@ -63,6 +63,33 @@ services:
     networks:
       - internal
 
+  vault:
+    image: hashicorp/vault:1.15
+    container_name: homelab-vault
+    restart: unless-stopped
+    user: "100:1000"
+    entrypoint: ["/bin/sh", "-c", "exec vault server -config=/vault/config/vault.hcl"]
+    cap_add:
+      - IPC_LOCK
+    environment:
+      VAULT_ADDR: http://0.0.0.0:8200
+      VAULT_API_ADDR: http://0.0.0.0:8200
+    expose:
+      - "8200"
+      - "8201"
+    volumes:
+      - vault_data:/vault/file
+      - ./vault/config:/vault/config:ro
+    networks:
+      - internal
+      - proxy
+    healthcheck:
+      test: ["CMD", "vault", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
 networks:
   internal:
     driver: bridge
@@ -75,4 +102,6 @@ volumes:
   caddy_config:
     driver: local
   vaultwarden_data:
+    driver: local
+  vault_data:
     driver: local
