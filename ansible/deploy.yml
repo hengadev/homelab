@@ -127,6 +127,7 @@
       retries: 10
       delay: 3
       changed_when: false
+      failed_when: vault_status.rc not in [0, 2]
 
     - name: Check if Vault is initialized
       ansible.builtin.command:
