@@ -3,7 +3,13 @@ provider "hcloud" {
 }
 
 provider "cloudflare" {
+  alias   = "homelab"
   api_token = var.cloudflare_api_token
+}
+
+provider "cloudflare" {
+  alias   = "cluo"
+  api_token = var.cloudflare_cluo_api_token
 }
 
 provider "aws" {
@@ -143,8 +149,9 @@ resource "aws_iam_access_key" "backup" {
   user = aws_iam_user.backup.name
 }
 
-# Cloudflare DNS records (proxied=false for Vaultwarden WebSocket support)
+# Cloudflare DNS records for homelab (henga.dev)
 resource "cloudflare_record" "root" {
+  provider = cloudflare.homelab
   zone_id = var.cloudflare_zone_id
   name    = "@"
   value   = hcloud_server.homelab.ipv4_address
@@ -154,6 +161,7 @@ resource "cloudflare_record" "root" {
 }
 
 resource "cloudflare_record" "vault" {
+  provider = cloudflare.homelab
   zone_id = var.cloudflare_zone_id
   name    = "vault"
   value   = hcloud_server.homelab.ipv4_address
@@ -162,9 +170,21 @@ resource "cloudflare_record" "vault" {
   proxied = false
 }
 
-# Cluo production
+# Cluo root domain (clientvault.fr)
+resource "cloudflare_record" "cluo_root" {
+  provider = cloudflare.cluo
+  zone_id = var.cloudflare_cluo_zone_id
+  name    = "@"
+  value   = hcloud_server.homelab.ipv4_address
+  type    = "A"
+  ttl     = 1
+  proxied = true
+}
+
+# Cluo production (clientvault.fr)
 resource "cloudflare_record" "cluo_api" {
-  zone_id = var.cloudflare_zone_id
+  provider = cloudflare.cluo
+  zone_id = var.cloudflare_cluo_zone_id
   name    = "api"
   value   = hcloud_server.homelab.ipv4_address
   type    = "A"
@@ -173,7 +193,8 @@ resource "cloudflare_record" "cluo_api" {
 }
 
 resource "cloudflare_record" "cluo_mobile" {
-  zone_id = var.cloudflare_zone_id
+  provider = cloudflare.cluo
+  zone_id = var.cloudflare_cluo_zone_id
   name    = "mobile"
   value   = hcloud_server.homelab.ipv4_address
   type    = "A"
@@ -181,9 +202,10 @@ resource "cloudflare_record" "cluo_mobile" {
   proxied = true
 }
 
-# Cluo staging
+# Cluo staging (clientvault.fr)
 resource "cloudflare_record" "cluo_staging" {
-  zone_id = var.cloudflare_zone_id
+  provider = cloudflare.cluo
+  zone_id = var.cloudflare_cluo_zone_id
   name    = "staging"
   value   = hcloud_server.homelab.ipv4_address
   type    = "A"
@@ -192,7 +214,8 @@ resource "cloudflare_record" "cluo_staging" {
 }
 
 resource "cloudflare_record" "cluo_staging_api" {
-  zone_id = var.cloudflare_zone_id
+  provider = cloudflare.cluo
+  zone_id = var.cloudflare_cluo_zone_id
   name    = "staging-api"
   value   = hcloud_server.homelab.ipv4_address
   type    = "A"
@@ -201,7 +224,8 @@ resource "cloudflare_record" "cluo_staging_api" {
 }
 
 resource "cloudflare_record" "cluo_staging_mobile" {
-  zone_id = var.cloudflare_zone_id
+  provider = cloudflare.cluo
+  zone_id = var.cloudflare_cluo_zone_id
   name    = "staging-mobile"
   value   = hcloud_server.homelab.ipv4_address
   type    = "A"

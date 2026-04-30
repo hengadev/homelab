@@ -6,7 +6,13 @@ variable "hcloud_token" {
 
 variable "cloudflare_api_token" {
   type        = string
-  description = "Cloudflare API token (scoped to Zone:DNS:Edit + Zone:Zone:Read)"
+  description = "Cloudflare API token for homelab domain (scoped to Zone:DNS:Edit + Zone:Zone:Read)"
+  sensitive   = true
+}
+
+variable "cloudflare_cluo_api_token" {
+  type        = string
+  description = "Cloudflare API token for Cluo app domain (scoped to Zone:DNS:Edit + Zone:Zone:Read)"
   sensitive   = true
 }
 
@@ -18,6 +24,16 @@ variable "cloudflare_zone_id" {
 variable "domain" {
   type        = string
   description = "Domain name (e.g., example.com)"
+}
+
+variable "cluo_domain" {
+  type        = string
+  description = "Cluo app domain name (e.g., clientvault.fr)"
+}
+
+variable "cloudflare_cluo_zone_id" {
+  type        = string
+  description = "Cloudflare Zone ID for the Cluo app domain"
 }
 
 variable "ssh_public_key" {
