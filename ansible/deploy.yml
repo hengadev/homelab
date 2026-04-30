@@ -106,11 +106,21 @@
         chdir: /opt/homelab
       changed_when: true
 
+    - name: Wait for Caddy container to be running
+      ansible.builtin.shell:
+        cmd: docker ps --filter "name=homelab-caddy" --format "{{.Status}}" | grep -q "Up"
+      register: caddy_status
+      until: caddy_status.rc == 0
+      retries: 10
+      delay: 2
+      changed_when: false
+
     - name: Reload Caddy config
       ansible.builtin.command:
         cmd: docker exec homelab-caddy caddy reload --config /etc/caddy/Caddyfile
         chdir: /opt/homelab
       changed_when: true
+      failed_when: false
 
 
     # =========================================================================
