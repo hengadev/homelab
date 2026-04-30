@@ -134,6 +134,7 @@
         cmd: docker exec homelab-vault vault status -format=json
       register: vault_status_json
       changed_when: false
+      failed_when: false
 
     - name: Parse Vault status
       ansible.builtin.set_fact:
