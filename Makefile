@@ -39,6 +39,9 @@ generate-tfvars: ## Generate terraform.tfvars from .env
 	@echo "cloudflare_api_token = \"$(CLOUDFLARE_API_TOKEN)\"" >> terraform/terraform.tfvars
 	@echo "cloudflare_zone_id = \"$(CLOUDFLARE_ZONE_ID)\"" >> terraform/terraform.tfvars
 	@echo "domain = \"$(DOMAIN)\"" >> terraform/terraform.tfvars
+	@echo "cloudflare_cluo_api_token = \"$(CLOUDFLARE_CLUO_API_TOKEN)\"" >> terraform/terraform.tfvars
+	@echo "cloudflare_cluo_zone_id = \"$(CLOUDFLARE_CLUO_ZONE_ID)\"" >> terraform/terraform.tfvars
+	@echo "cluo_domain = \"$(CLUO_DOMAIN)\"" >> terraform/terraform.tfvars
 	@echo "ssh_public_key = \"$(SSH_PUBLIC_KEY)\"" >> terraform/terraform.tfvars
 	@echo "ssh_private_key_path = \"$(SSH_PRIVATE_KEY_PATH)\"" >> terraform/terraform.tfvars
 	@echo "backup_s3_bucket     = \"$(BACKUP_S3_BUCKET)\"" >> terraform/terraform.tfvars
