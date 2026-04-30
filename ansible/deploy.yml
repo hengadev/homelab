@@ -108,7 +108,7 @@
 
     - name: Wait for Caddy container to be running
       ansible.builtin.shell:
-        cmd: docker ps --filter "name=homelab-caddy" --format "{{.Status}}" | grep -q "Up"
+        cmd: docker ps --filter "name=homelab-caddy" --format "{% raw %}{{.Status}}{% endraw %}" | grep -q "Up"
       register: caddy_status
       until: caddy_status.rc == 0
       retries: 10
