@@ -2,7 +2,6 @@
 set -eu
 
 # Validate required environment variables
-: "${DOMAIN:?DOMAIN not set}"
 : "${BACKUP_S3_BUCKET:?BACKUP_S3_BUCKET not set}"
 : "${BACKUP_PASSPHRASE:?BACKUP_PASSPHRASE not set}"
 : "${AWS_ACCESS_KEY_ID:?AWS_ACCESS_KEY_ID not set}"
