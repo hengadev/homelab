@@ -353,6 +353,15 @@
         chdir: /opt/cluo
       changed_when: true
 
+    - name: Wait for production postgres to be ready
+      ansible.builtin.command:
+        cmd: docker exec cluo-prod-postgres pg_isready -U {{ cluo_prod_db_user }}
+      register: pg_ready
+      until: pg_ready.rc == 0
+      retries: 10
+      delay: 3
+      changed_when: false
+
     # =========================================================================
     # Cluo staging
     # =========================================================================
@@ -380,6 +389,20 @@
         group: deploy
         mode: "0600"
 
+    - name: Create staging database user on production postgres
+      ansible.builtin.command:
+        cmd: docker exec cluo-prod-postgres psql -U {{ cluo_prod_db_user }} -c "DO $$ BEGIN CREATE ROLE {{ cluo_staging_db_user }} WITH LOGIN PASSWORD '{{ cluo_staging_db_password }}'; EXCEPTION WHEN duplicate_object THEN NULL; END $$;"
+      changed_when: false
+      no_log: true
+
+    - name: Create staging database on production postgres
+      ansible.builtin.command:
+        cmd: docker exec cluo-prod-postgres psql -U {{ cluo_prod_db_user }} -c "CREATE DATABASE {{ cluo_staging_db_name }} OWNER {{ cluo_staging_db_user }};"
+      register: create_staging_db
+      failed_when: create_staging_db.rc != 0 and 'already exists' not in create_staging_db.stderr
+      changed_when: create_staging_db.rc == 0
+      no_log: true
+
     - name: Pull cluo staging images
       ansible.builtin.command:
         cmd: docker compose pull
@@ -391,3 +414,12 @@
         cmd: docker compose up -d --remove-orphans
         chdir: /opt/cluo-staging
       changed_when: true
+
+    - name: Wait for cluo staging API to be running
+      ansible.builtin.command:
+        cmd: docker inspect --format='{{ '{{' }}.State.Status{{ '}}' }}' cluo-staging-api
+      register: staging_api_status
+      until: staging_api_status.stdout == "running"
+      retries: 10
+      delay: 5
+      changed_when: false
