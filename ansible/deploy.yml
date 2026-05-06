@@ -391,25 +391,15 @@
 
     - name: Create staging database user on production postgres
       ansible.builtin.command:
-        cmd: docker exec cluo-prod-postgres psql -U {{ cluo_prod_db_user }} -c "CREATE ROLE {{ cluo_staging_db_user }} WITH LOGIN PASSWORD '{{ cluo_staging_db_password }}';"
+        cmd: docker exec cluo-prod-postgres psql -U {{ cluo_prod_db_user }} -d postgres -c "CREATE ROLE {{ cluo_staging_db_user }} WITH LOGIN PASSWORD '{{ cluo_staging_db_password }}';"
       register: create_staging_user
-      failed_when: false
+      failed_when: create_staging_user.rc != 0 and 'already exists' not in create_staging_user.stderr
       changed_when: create_staging_user.rc == 0
       no_log: true
 
-    - name: Debug staging user creation result
-      ansible.builtin.debug:
-        msg: "rc={{ create_staging_user.rc }} stderr={{ create_staging_user.stderr }}"
-      when: create_staging_user.rc != 0 and 'already exists' not in create_staging_user.stderr
-
-    - name: Fail if staging user creation failed unexpectedly
-      ansible.builtin.fail:
-        msg: "Failed to create staging DB user — see debug output above"
-      when: create_staging_user.rc != 0 and 'already exists' not in create_staging_user.stderr
-
     - name: Create staging database on production postgres
       ansible.builtin.command:
-        cmd: docker exec cluo-prod-postgres psql -U {{ cluo_prod_db_user }} -c "CREATE DATABASE {{ cluo_staging_db_name }} OWNER {{ cluo_staging_db_user }};"
+        cmd: docker exec cluo-prod-postgres psql -U {{ cluo_prod_db_user }} -d postgres -c "CREATE DATABASE {{ cluo_staging_db_name }} OWNER {{ cluo_staging_db_user }};"
       register: create_staging_db
       failed_when: create_staging_db.rc != 0 and 'already exists' not in create_staging_db.stderr
       changed_when: create_staging_db.rc == 0
