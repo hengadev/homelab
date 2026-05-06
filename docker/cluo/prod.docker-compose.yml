@@ -76,6 +76,7 @@ services:
 networks:
   cluo-prod-internal:
     driver: bridge
+    name: cluo-prod-internal
   proxy:
     external: true
 
