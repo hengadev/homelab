@@ -1,50 +1,14 @@
 services:
-  cluo-staging-postgres:
-    image: postgres:16-alpine
-    container_name: cluo-staging-postgres
-    environment:
-      POSTGRES_USER: ${CLUO_DB_USER}
-      POSTGRES_PASSWORD: ${CLUO_DB_PASSWORD}
-      POSTGRES_DB: ${CLUO_DB_NAME}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${CLUO_DB_USER:-cluo}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-    networks:
-      - cluo-staging-internal
-
-  cluo-staging-redis:
-    image: redis:7-alpine
-    container_name: cluo-staging-redis
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-    networks:
-      - cluo-staging-internal
-
+  # Staging API - connects to production's postgres and redis on shared network
   cluo-staging-api:
     image: ${CLUO_REGISTRY}/cluo-api:${CLUO_STAGING_TAG:-latest}
     container_name: cluo-staging-api
     env_file: .env
     ports:
       - "127.0.0.1:8081:8080"
-    depends_on:
-      cluo-staging-postgres:
-        condition: service_healthy
-      cluo-staging-redis:
-        condition: service_healthy
     restart: unless-stopped
     networks:
-      - cluo-staging-internal
+      - cluo-prod-internal
       - proxy
 
   cluo-staging-web:
@@ -57,7 +21,7 @@ services:
       - cluo-staging-api
     restart: unless-stopped
     networks:
-      - cluo-staging-internal
+      - cluo-prod-internal
       - proxy
 
   cluo-staging-mobile:
@@ -70,17 +34,12 @@ services:
       - cluo-staging-api
     restart: unless-stopped
     networks:
-      - cluo-staging-internal
+      - cluo-prod-internal
       - proxy
 
 networks:
-  cluo-staging-internal:
-    driver: bridge
+  # Join production's network to access shared postgres and redis
+  cluo-prod-internal:
+    external: true
   proxy:
     external: true
-
-volumes:
-  postgres_data:
-    driver: local
-  redis_data:
-    driver: local
