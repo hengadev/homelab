@@ -16,6 +16,9 @@ ansible/.env.yml
 *.gpg
 *.tar.gz
 
+# Local issues / PRDs
+/issues/
+
 # OS
 .DS_Store
 *.swp
