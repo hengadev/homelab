@@ -62,6 +62,80 @@
         group: deploy
         mode: "0750"
 
+    # =========================================================================
+    # Vaultwarden restore (skipped when data directory already has content)
+    # =========================================================================
+    - name: Check if Vaultwarden data directory is empty
+      ansible.builtin.find:
+        paths: /opt/homelab/data/vaultwarden
+        min_depth: 1
+      register: vaultwarden_data_contents
+
+    - name: Restore Vaultwarden from S3 backup
+      when: vaultwarden_data_contents.matched == 0
+      block:
+        - name: Find latest Vaultwarden backup in S3
+          ansible.builtin.shell:
+            cmd: >
+              aws s3 ls s3://{{ backup_s3_bucket }}/
+              | grep 'vaultwarden_'
+              | awk '{print $4}'
+              | sort
+              | tail -1
+          environment:
+            AWS_ACCESS_KEY_ID: "{{ backup_aws_access_key_id }}"
+            AWS_SECRET_ACCESS_KEY: "{{ backup_aws_secret_access_key }}"
+            AWS_DEFAULT_REGION: "{{ aws_default_region }}"
+          register: latest_backup
+          changed_when: false
+
+        - name: Log notice when no backup found in S3
+          ansible.builtin.debug:
+            msg: "No Vaultwarden backup found in S3, starting fresh"
+          when: latest_backup.stdout | trim == ""
+
+        - name: Download latest Vaultwarden backup from S3
+          ansible.builtin.command:
+            cmd: >
+              aws s3 cp
+              s3://{{ backup_s3_bucket }}/{{ latest_backup.stdout | trim }}
+              /tmp/{{ latest_backup.stdout | trim }}
+          environment:
+            AWS_ACCESS_KEY_ID: "{{ backup_aws_access_key_id }}"
+            AWS_SECRET_ACCESS_KEY: "{{ backup_aws_secret_access_key }}"
+            AWS_DEFAULT_REGION: "{{ aws_default_region }}"
+          when: latest_backup.stdout | trim != ""
+          changed_when: true
+
+        - name: Decrypt Vaultwarden backup
+          ansible.builtin.shell:
+            cmd: >
+              echo "{{ backup_passphrase }}" |
+              gpg --batch --yes --passphrase-fd 0
+              --decrypt
+              --output /tmp/{{ latest_backup.stdout | trim | regex_replace('\.gpg$', '') }}
+              /tmp/{{ latest_backup.stdout | trim }}
+          when: latest_backup.stdout | trim != ""
+          no_log: true
+          changed_when: true
+
+        - name: Extract Vaultwarden backup to data directory
+          ansible.builtin.command:
+            cmd: >
+              tar -xzf /tmp/{{ latest_backup.stdout | trim | regex_replace('\.gpg$', '') }}
+              -C /opt/homelab/data/vaultwarden
+          when: latest_backup.stdout | trim != ""
+          changed_when: true
+
+        - name: Remove temporary backup files
+          ansible.builtin.file:
+            path: "{{ item }}"
+            state: absent
+          loop:
+            - "/tmp/{{ latest_backup.stdout | trim }}"
+            - "/tmp/{{ latest_backup.stdout | trim | regex_replace('\\.gpg$', '') }}"
+          when: latest_backup.stdout | trim != ""
+
     - name: Copy docker-compose.yml to server
       ansible.builtin.copy:
         src: ../docker/docker-compose.yml
