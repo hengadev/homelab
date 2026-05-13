@@ -26,7 +26,7 @@ echo "${BACKUP_PASSPHRASE}" | gpg --batch --yes --passphrase-fd 0 \
 
 # Upload to S3
 echo "${LOG_PREFIX} Uploading to S3..."
-aws s3 cp "/tmp/${ENCRYPTED_FILE}" "${BACKUP_S3_BUCKET}/${ENCRYPTED_FILE}" \
+aws s3 cp "/tmp/${ENCRYPTED_FILE}" "s3://${BACKUP_S3_BUCKET}/${ENCRYPTED_FILE}" \
     --storage-class STANDARD_IA
 
 # Clean up local files
@@ -35,12 +35,12 @@ rm -f "/tmp/${BACKUP_FILE}" "/tmp/${ENCRYPTED_FILE}"
 # Prune old backups (keep last 30 days)
 echo "${LOG_PREFIX} Pruning old backups..."
 CUTOFF_DATE=$(date -d "30 days ago" +%Y%m%d)
-aws s3 ls "${BACKUP_S3_BUCKET}/" | while read -r line; do
-    FILE_DATE=$(echo "$line" | grep -oP 'vaultwarden_\K[0-9]{8}' || true)
+aws s3 ls "s3://${BACKUP_S3_BUCKET}/" | while read -r line; do
+    FILE_NAME=$(echo "$line" | awk '{print $4}')
+    FILE_DATE=$(echo "${FILE_NAME}" | sed -n 's/vaultwarden_\([0-9]\{8\}\).*/\1/p')
     if [ -n "$FILE_DATE" ] && [ "$FILE_DATE" -lt "$CUTOFF_DATE" ]; then
-        FILE_NAME=$(echo "$line" | awk '{print $4}')
         echo "${LOG_PREFIX} Deleting old backup: ${FILE_NAME}"
-        aws s3 rm "${BACKUP_S3_BUCKET}/${FILE_NAME}"
+        aws s3 rm "s3://${BACKUP_S3_BUCKET}/${FILE_NAME}"
     fi
 done
 
