@@ -100,6 +100,8 @@
           - containerd.io
           - docker-buildx-plugin
           - docker-compose-plugin
+          - awscli
+          - gnupg
         update_cache: true
 
     - name: Enable and start Docker service
