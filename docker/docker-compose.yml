@@ -21,7 +21,7 @@ services:
     image: vaultwarden/server:latest
     container_name: homelab-vaultwarden
     volumes:
-      - vaultwarden_data:/data
+      - /opt/homelab/data/vaultwarden:/data
     env_file:
       - .env
     environment:
@@ -43,7 +43,7 @@ services:
     image: alpine:3.19
     container_name: homelab-backup
     volumes:
-      - vaultwarden_data:/data:ro
+      - /opt/homelab/data/vaultwarden:/data:ro
       - ./backup.sh:/backup.sh:ro
     environment:
       # Map dedicated backup IAM credentials to standard AWS env vars inside the container
@@ -100,8 +100,6 @@ volumes:
   caddy_data:
     driver: local
   caddy_config:
-    driver: local
-  vaultwarden_data:
     driver: local
   vault_data:
     driver: local
