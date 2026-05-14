@@ -18,6 +18,7 @@ ansible/.env.yml
 
 # Local issues / PRDs
 /issues/
+/md/
 
 # OS
 .DS_Store
