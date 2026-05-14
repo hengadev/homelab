@@ -35,7 +35,7 @@ rm -f "/tmp/${BACKUP_FILE}" "/tmp/${ENCRYPTED_FILE}"
 
 # Prune old backups (keep last 30 days)
 echo "${LOG_PREFIX} Pruning old backups..."
-CUTOFF_DATE=$(date -d "30 days ago" +%Y%m%d)
+CUTOFF_DATE=$(date -d @$(( $(date +%s) - 30*86400 )) +%Y%m%d)
 aws s3 ls "s3://${BACKUP_S3_BUCKET}/" | while read -r line; do
     FILE_NAME=$(echo "$line" | awk '{print $4}')
     FILE_DATE=$(echo "${FILE_NAME}" | sed -n 's/vaultwarden_\([0-9]\{8\}\).*/\1/p')
