@@ -464,10 +464,15 @@
 
     - name: Create staging database user on production postgres
       ansible.builtin.command:
-        cmd: docker exec cluo-prod-postgres psql -U {{ cluo_prod_db_user }} -d postgres -c "CREATE ROLE {{ cluo_staging_db_user }} WITH LOGIN PASSWORD '{{ cluo_staging_db_password }}';"
-      register: create_staging_user
-      failed_when: create_staging_user.rc != 0 and 'already exists' not in create_staging_user.stderr
-      changed_when: create_staging_user.rc == 0
+        cmd: >
+          docker exec cluo-prod-postgres psql -U {{ cluo_prod_db_user }} -d postgres -c
+          "DO $$ BEGIN
+             IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '{{ cluo_staging_db_user }}') THEN
+               CREATE ROLE {{ cluo_staging_db_user }} WITH LOGIN;
+             END IF;
+             ALTER ROLE {{ cluo_staging_db_user }} WITH LOGIN PASSWORD '{{ cluo_staging_db_password }}';
+           END $$;"
+      changed_when: true
       no_log: true
 
     - name: Create staging database on production postgres
