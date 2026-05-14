@@ -68,7 +68,6 @@
     - name: Check if Vaultwarden data directory is empty
       ansible.builtin.find:
         paths: /opt/homelab/data/vaultwarden
-        min_depth: 1
       register: vaultwarden_data_contents
 
     - name: Restore Vaultwarden from S3 backup
