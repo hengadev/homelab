@@ -6,6 +6,7 @@ set -eu
 : "${BACKUP_PASSPHRASE:?BACKUP_PASSPHRASE not set}"
 : "${AWS_ACCESS_KEY_ID:?AWS_ACCESS_KEY_ID not set}"
 : "${AWS_SECRET_ACCESS_KEY:?AWS_SECRET_ACCESS_KEY not set}"
+: "${AWS_DEFAULT_REGION:?AWS_DEFAULT_REGION not set}"
 
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 BACKUP_FILE="vaultwarden_${TIMESTAMP}.tar.gz"
