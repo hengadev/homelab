@@ -100,7 +100,8 @@ reasoning about homelab architecture.
 | `homelab-caddy` | `caddy:2-alpine` | `:80`, `:443` | `caddy_data`, `caddy_config` volumes |
 | `homelab-vaultwarden` | `vaultwarden/server:latest` | `vault.henga.dev` | `/opt/homelab/data/vaultwarden` |
 | `homelab-portfolio` | `henga/portfolio:latest` | `henga.dev` | none |
-| `homelab-backup` | `alpine:3.19` | — (internal cron) | reads Vaultwarden data read-only |
+| `homelab-anki` | `ankicommunity/anki-sync-server:latest` | `anki.henga.dev` | `/opt/homelab/data/anki` |
+| `homelab-backup` | `alpine:3.19` | — (internal cron) | reads Vaultwarden and Anki data read-only |
 
 ---
 
