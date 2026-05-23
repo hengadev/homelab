@@ -62,6 +62,14 @@
         group: deploy
         mode: "0750"
 
+    - name: Create anki data directory
+      ansible.builtin.file:
+        path: /opt/homelab/data/anki
+        state: directory
+        owner: deploy
+        group: deploy
+        mode: "0750"
+
     # =========================================================================
     # Vaultwarden restore (skipped when data directory already has content)
     # =========================================================================

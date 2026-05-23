@@ -170,6 +170,16 @@ resource "cloudflare_record" "vault" {
   proxied = false
 }
 
+resource "cloudflare_record" "anki" {
+  provider = cloudflare.homelab
+  zone_id = var.cloudflare_zone_id
+  name    = "anki"
+  value   = hcloud_server.homelab.ipv4_address
+  type    = "A"
+  ttl     = 300
+  proxied = false
+}
+
 # Cluo root domain (clientvault.fr)
 resource "cloudflare_record" "cluo_root" {
   provider = cloudflare.cluo
