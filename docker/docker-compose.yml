@@ -40,7 +40,7 @@ services:
       - internal
 
   anki:
-    image: ankicommunity/anki-sync-server:latest
+    image: ankicommunity/anki-sync-server:20240417
     container_name: homelab-anki
     volumes:
       - /opt/homelab/data/anki:/anki-data
