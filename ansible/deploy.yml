@@ -188,6 +188,11 @@
         chdir: /opt/homelab
       changed_when: true
 
+    - name: Reload Caddy config
+      ansible.builtin.command:
+        cmd: docker exec homelab-caddy caddy reload --config /etc/caddy/Caddyfile
+      changed_when: false
+
 
 
     # =========================================================================
