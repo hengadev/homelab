@@ -151,6 +151,22 @@
         group: deploy
         mode: "0644"
 
+    - name: Create anki build directory
+      ansible.builtin.file:
+        path: /opt/homelab/anki
+        state: directory
+        owner: deploy
+        group: deploy
+        mode: "0755"
+
+    - name: Copy anki Dockerfile to server
+      ansible.builtin.copy:
+        src: ../docker/anki/Dockerfile
+        dest: /opt/homelab/anki/Dockerfile
+        owner: deploy
+        group: deploy
+        mode: "0644"
+
     - name: Copy Caddyfile to server
       ansible.builtin.copy:
         src: ../docker/Caddyfile

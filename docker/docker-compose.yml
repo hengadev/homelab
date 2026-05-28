@@ -40,7 +40,7 @@ services:
       - internal
 
   anki:
-    image: ankicommunity/anki-sync-server:20240417
+    build: ./anki
     container_name: homelab-anki
     volumes:
       - /opt/homelab/data/anki:/anki-data
@@ -49,6 +49,7 @@ services:
     environment:
       - SYNC_BASE=/anki-data
       - SYNC_USER1=${ANKI_SYNC_USER1}
+      - SYNC_PORT=27701
     restart: unless-stopped
     networks:
       - internal
