@@ -1,9 +1,10 @@
-.PHONY: help init setup deploy update destroy ssh logs generate-tfvars generate-inventory reload-portfolio rebuild-cluo-prod rebuild-cluo-staging logs-cluo-prod logs-cluo-staging
+.PHONY: help init setup deploy update destroy ssh logs generate-tfvars generate-inventory deploy-portfolio reload-portfolio rebuild-cluo-prod rebuild-cluo-staging logs-cluo-prod logs-cluo-staging
 
 include .env
 export
 
-SERVER_IP := $(shell cd terraform && terraform output -raw server_ip 2>/dev/null)
+SERVER_IP    := $(shell cd terraform && terraform output -raw server_ip 2>/dev/null)
+PORTFOLIO_DIR ?= $(HOME)/Documents/projects/gary/portfolio
 
 ANSIBLE_VARS = -e domain=$(DOMAIN) \
                -e admin_token=$(ADMIN_TOKEN) \
@@ -90,7 +91,11 @@ deploy: generate-inventory ## Deploy Docker services
 	@ansible-playbook -i ansible/inventory/hosts.yml ansible/deploy.yml $(ANSIBLE_VARS) --extra-vars @$(ANSIBLE_SSH_VARS_FILE)
 	@rm -f $(ANSIBLE_SSH_VARS_FILE)
 
-reload-portfolio: ## Pull latest portfolio image and restart the container
+deploy-portfolio: ## Build, push, and restart the portfolio container
+	@$(MAKE) -C $(PORTFOLIO_DIR) ship
+	@ssh -i $(SSH_PRIVATE_KEY_PATH) deploy@$(SERVER_IP) "cd /opt/homelab && docker compose pull portfolio && docker compose up -d --no-deps portfolio"
+
+reload-portfolio: ## Pull latest portfolio image and restart the container (skip build)
 	@ssh -i $(SSH_PRIVATE_KEY_PATH) deploy@$(SERVER_IP) "cd /opt/homelab && docker compose pull portfolio && docker compose up -d --no-deps portfolio"
 
 update: ## Update Docker services on server
