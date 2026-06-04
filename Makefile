@@ -93,6 +93,7 @@ deploy: generate-inventory ## Deploy Docker services
 
 deploy-portfolio: ## Build, push, and restart the portfolio container
 	@$(MAKE) -C $(PORTFOLIO_DIR) ship
+	@scp -i $(SSH_PRIVATE_KEY_PATH) docker/docker-compose.yml deploy@$(SERVER_IP):/opt/homelab/docker-compose.yml
 	@ssh -i $(SSH_PRIVATE_KEY_PATH) deploy@$(SERVER_IP) "cd /opt/homelab && docker compose pull portfolio && docker compose up -d --no-deps portfolio"
 
 reload-portfolio: ## Pull latest portfolio image and restart the container (skip build)
