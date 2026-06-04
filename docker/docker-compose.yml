@@ -36,7 +36,7 @@ services:
     image: henga/portfolio:latest
     container_name: homelab-portfolio
     environment:
-      - COMING_SOON=true
+      - COMING_SOON=false
     restart: unless-stopped
     networks:
       - internal
