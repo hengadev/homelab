@@ -108,6 +108,38 @@ services:
       retries: 5
       start_period: 30s
 
+  leviosa-demo:
+    image: henga/leviosa:frontend-latest
+    container_name: homelab-leviosa-demo
+    environment:
+      - USE_MOCK_DATA=true
+      - COMING_SOON=false
+      - SESSION_COOKIE_NAME=leviosa_session
+      - MOCK_ADMIN_EMAIL=${LEVIOSA_DEMO_ADMIN_EMAIL}
+      - MOCK_ADMIN_PASSWORD=${LEVIOSA_DEMO_ADMIN_PASSWORD}
+      - MOCK_PARTNER_EMAIL=${LEVIOSA_DEMO_PARTNER_EMAIL}
+      - MOCK_PARTNER_PASSWORD=${LEVIOSA_DEMO_PARTNER_PASSWORD}
+      - MOCK_CLIENT_EMAIL=${LEVIOSA_DEMO_CLIENT_EMAIL}
+      - MOCK_CLIENT_PASSWORD=${LEVIOSA_DEMO_CLIENT_PASSWORD}
+    restart: unless-stopped
+    networks:
+      - internal
+
+  germinal-demo:
+    image: henga/germinal:latest
+    container_name: homelab-germinal-demo
+    environment:
+      - USE_MOCK_DATA=true
+      - NODE_ENV=production
+      - PORT=3001
+      - MOCK_ADMIN_EMAIL=${GERMINAL_DEMO_ADMIN_EMAIL}
+      - MOCK_ADMIN_PASSWORD=${GERMINAL_DEMO_ADMIN_PASSWORD}
+      - MOCK_STAFF_EMAIL=${GERMINAL_DEMO_STAFF_EMAIL}
+      - MOCK_STAFF_PASSWORD=${GERMINAL_DEMO_STAFF_PASSWORD}
+    restart: unless-stopped
+    networks:
+      - internal
+
 networks:
   internal:
     driver: bridge

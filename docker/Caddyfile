@@ -97,3 +97,25 @@ vault.{$DOMAIN} {
         Referrer-Policy no-referrer
     }
 }
+
+leviosa.{$DOMAIN} {
+    reverse_proxy leviosa-demo:3000
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy no-referrer
+        Permissions-Policy "geolocation=(), microphone=(), camera=()"
+    }
+}
+
+germinal.{$DOMAIN} {
+    reverse_proxy germinal-demo:3001
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy no-referrer
+        Permissions-Policy "geolocation=(), microphone=(), camera=()"
+    }
+}
