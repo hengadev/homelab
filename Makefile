@@ -1,4 +1,4 @@
-.PHONY: help init setup deploy update destroy ssh logs generate-tfvars generate-inventory deploy-portfolio reload-portfolio rebuild-cluo-prod rebuild-cluo-staging logs-cluo-prod logs-cluo-staging
+.PHONY: help init setup deploy update destroy ssh logs generate-tfvars generate-inventory deploy-portfolio reload-portfolio rebuild-cluo-prod rebuild-cluo-staging logs-cluo-prod logs-cluo-staging deploy-demos
 
 include .env
 export
@@ -26,7 +26,17 @@ ANSIBLE_VARS = -e domain=$(DOMAIN) \
                -e cluo_staging_db_password=$(CLUO_STAGING_DB_PASSWORD) \
 	               -e cluo_domain=$(CLUO_DOMAIN) \
 	               -e anki_username=$(ANKI_USERNAME) \
-	               -e anki_password=$(ANKI_PASSWORD)
+	               -e anki_password=$(ANKI_PASSWORD) \
+               -e leviosa_demo_admin_email=$(LEVIOSA_DEMO_ADMIN_EMAIL) \
+               -e leviosa_demo_admin_password=$(LEVIOSA_DEMO_ADMIN_PASSWORD) \
+               -e leviosa_demo_partner_email=$(LEVIOSA_DEMO_PARTNER_EMAIL) \
+               -e leviosa_demo_partner_password=$(LEVIOSA_DEMO_PARTNER_PASSWORD) \
+               -e leviosa_demo_client_email=$(LEVIOSA_DEMO_CLIENT_EMAIL) \
+               -e leviosa_demo_client_password=$(LEVIOSA_DEMO_CLIENT_PASSWORD) \
+               -e germinal_demo_admin_email=$(GERMINAL_DEMO_ADMIN_EMAIL) \
+               -e germinal_demo_admin_password=$(GERMINAL_DEMO_ADMIN_PASSWORD) \
+               -e germinal_demo_staff_email=$(GERMINAL_DEMO_STAFF_EMAIL) \
+               -e germinal_demo_staff_password=$(GERMINAL_DEMO_STAFF_PASSWORD)
 
 # SSH_PUBLIC_KEY contains spaces so it must be passed via a vars file, not -e
 ANSIBLE_SSH_VARS_FILE := /tmp/homelab_ssh_vars.yml
@@ -127,3 +137,8 @@ logs-cluo-prod: ## View cluo production logs
 
 logs-cluo-staging: ## View cluo staging logs
 	@ssh -i $(SSH_PRIVATE_KEY_PATH) deploy@$(SERVER_IP) "cd /opt/cluo-staging && docker compose logs -f"
+
+deploy-demos: ## Pull latest demo images and restart leviosa-demo and germinal-demo
+	@scp -i $(SSH_PRIVATE_KEY_PATH) docker/docker-compose.yml deploy@$(SERVER_IP):/opt/homelab/docker-compose.yml
+	@scp -i $(SSH_PRIVATE_KEY_PATH) docker/Caddyfile deploy@$(SERVER_IP):/opt/homelab/Caddyfile
+	@ssh -i $(SSH_PRIVATE_KEY_PATH) deploy@$(SERVER_IP) "cd /opt/homelab && docker compose pull leviosa-demo germinal-demo && docker compose up -d --no-deps leviosa-demo germinal-demo && docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile"
