@@ -1,4 +1,4 @@
-.PHONY: help init setup deploy update destroy ssh logs generate-tfvars generate-inventory deploy-portfolio reload-portfolio rebuild-cluo-prod rebuild-cluo-staging logs-cluo-prod logs-cluo-staging deploy-demos
+.PHONY: help init setup deploy update destroy ssh logs generate-tfvars generate-inventory deploy-portfolio reload-portfolio rebuild-anki-api rebuild-cluo-prod rebuild-cluo-staging logs-cluo-prod logs-cluo-staging deploy-demos
 
 include .env
 export
@@ -138,6 +138,9 @@ logs-cluo-prod: ## View cluo production logs
 
 logs-cluo-staging: ## View cluo staging logs
 	@ssh -i $(SSH_PRIVATE_KEY_PATH) deploy@$(SERVER_IP) "cd /opt/cluo-staging && docker compose logs -f"
+
+rebuild-anki-api: ## Rebuild and restart the anki-api container on the server
+	@ssh -i $(SSH_PRIVATE_KEY_PATH) deploy@$(SERVER_IP) "cd /opt/homelab && docker compose build anki-api && docker compose up -d --no-deps anki-api"
 
 deploy-demos: ## Pull latest demo images and restart leviosa-demo and germinal-demo
 	@scp -i $(SSH_PRIVATE_KEY_PATH) docker/docker-compose.yml deploy@$(SERVER_IP):/opt/homelab/docker-compose.yml
