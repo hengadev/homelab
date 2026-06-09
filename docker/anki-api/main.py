@@ -114,6 +114,29 @@ def create_deck(body: DeckCreate):
     return {"id": did, "name": body.name}
 
 
+@app.get("/cards", dependencies=[Security(_require_key)])
+def list_cards(deck: str | None = None):
+    col_path = _find_collection()
+    with _lock:
+        with _open_collection(col_path) as col:
+            if deck is not None:
+                deck_ids = {d.id for d in col.decks.all_names_and_ids() if d.name == deck}
+                if not deck_ids:
+                    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Deck '{deck}' not found.")
+                note_ids = col.find_notes(f"deck:\"{deck}\"")
+            else:
+                note_ids = col.find_notes("")
+
+            results = []
+            for nid in note_ids:
+                note = col.get_note(nid)
+                notetype = col.models.get(note.mid)
+                fields = {name: note.fields[i] for i, name in enumerate(col.models.field_names(notetype))}
+                results.append({"id": nid, "notetype": notetype["name"], "fields": fields})
+
+    return results
+
+
 @app.post("/cards", status_code=status.HTTP_201_CREATED, dependencies=[Security(_require_key)])
 def create_card(body: CardCreate):
     if body.type not in ("basic", "cloze"):
