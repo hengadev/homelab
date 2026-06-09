@@ -56,6 +56,20 @@ services:
     networks:
       - internal
 
+  anki-api:
+    build: ./anki-api
+    container_name: homelab-anki-api
+    volumes:
+      - /opt/homelab/data/anki:/anki-data
+    env_file:
+      - .env
+    environment:
+      - SYNC_BASE=/anki-data
+      - ANKI_API_KEY=${ANKI_API_KEY}
+    restart: unless-stopped
+    networks:
+      - internal
+
   vaultwarden-backup:
     image: alpine:3.19
     container_name: homelab-backup
