@@ -101,6 +101,7 @@ reasoning about homelab architecture.
 | `homelab-vaultwarden` | `vaultwarden/server:latest` | `vault.henga.dev` | `/opt/homelab/data/vaultwarden` |
 | `homelab-portfolio` | `henga/portfolio:latest` | `henga.dev` | none |
 | `homelab-anki` | `ankicommunity/anki-sync-server:latest` | `anki.henga.dev` | `/opt/homelab/data/anki` |
+| `homelab-anki-api` | local build (`docker/anki-api/`) | `anki-api.henga.dev` | `/opt/homelab/data/anki` (shared with anki) |
 | `homelab-backup` | `alpine:3.19` | — (internal cron) | reads Vaultwarden and Anki data read-only |
 
 ---

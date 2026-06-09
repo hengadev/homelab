@@ -167,6 +167,26 @@
         group: deploy
         mode: "0644"
 
+    - name: Create anki-api build directory
+      ansible.builtin.file:
+        path: /opt/homelab/anki-api
+        state: directory
+        owner: deploy
+        group: deploy
+        mode: "0755"
+
+    - name: Copy anki-api files to server
+      ansible.builtin.copy:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        owner: deploy
+        group: deploy
+        mode: "0644"
+      loop:
+        - { src: ../docker/anki-api/Dockerfile, dest: /opt/homelab/anki-api/Dockerfile }
+        - { src: ../docker/anki-api/requirements.txt, dest: /opt/homelab/anki-api/requirements.txt }
+        - { src: ../docker/anki-api/main.py, dest: /opt/homelab/anki-api/main.py }
+
     - name: Copy Caddyfile to server
       ansible.builtin.copy:
         src: ../docker/Caddyfile

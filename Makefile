@@ -27,6 +27,7 @@ ANSIBLE_VARS = -e domain=$(DOMAIN) \
 	               -e cluo_domain=$(CLUO_DOMAIN) \
 	               -e anki_username=$(ANKI_USERNAME) \
 	               -e anki_password=$(ANKI_PASSWORD) \
+	               -e anki_api_key=$(ANKI_API_KEY) \
                -e leviosa_demo_admin_email=$(LEVIOSA_DEMO_ADMIN_EMAIL) \
                -e leviosa_demo_admin_password=$(LEVIOSA_DEMO_ADMIN_PASSWORD) \
                -e leviosa_demo_partner_email=$(LEVIOSA_DEMO_PARTNER_EMAIL) \
