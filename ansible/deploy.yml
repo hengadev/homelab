@@ -70,6 +70,14 @@
         group: deploy
         mode: "0750"
 
+    - name: Create MinIO data directory
+      ansible.builtin.file:
+        path: /opt/homelab/data/minio
+        state: directory
+        owner: deploy
+        group: deploy
+        mode: "0750"
+
     # =========================================================================
     # Vaultwarden restore (skipped when data directory already has content)
     # =========================================================================
@@ -497,6 +505,14 @@
         owner: deploy
         group: deploy
         mode: "0644"
+
+    - name: Copy cluo backup script
+      ansible.builtin.copy:
+        src: ../docker/cluo/backup.sh
+        dest: /opt/cluo-staging/backup.sh
+        owner: deploy
+        group: deploy
+        mode: "0755"
 
     - name: Template staging .env for cluo
       ansible.builtin.template:

@@ -65,6 +65,18 @@ staging-mobile.{$CLUO_DOMAIN} {
     }
 }
 
+media.{$CLUO_DOMAIN} {
+    reverse_proxy homelab-minio:9000 {
+        # Preserve the original Host header so MinIO can validate presigned URL signatures
+        header_up Host {host}
+    }
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options nosniff
+        Referrer-Policy no-referrer
+    }
+}
+
 {$DOMAIN} {
     reverse_proxy portfolio:3000
     header {
