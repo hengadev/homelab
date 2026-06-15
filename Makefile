@@ -37,7 +37,15 @@ ANSIBLE_VARS = -e domain=$(DOMAIN) \
                -e germinal_demo_admin_email=$(GERMINAL_DEMO_ADMIN_EMAIL) \
                -e germinal_demo_admin_password=$(GERMINAL_DEMO_ADMIN_PASSWORD) \
                -e germinal_demo_staff_email=$(GERMINAL_DEMO_STAFF_EMAIL) \
-               -e germinal_demo_staff_password=$(GERMINAL_DEMO_STAFF_PASSWORD)
+               -e germinal_demo_staff_password=$(GERMINAL_DEMO_STAFF_PASSWORD) \
+               -e minio_root_user=$(MINIO_ROOT_USER) \
+               -e minio_root_password=$(MINIO_ROOT_PASSWORD) \
+               -e minio_kms_secret_key=$(MINIO_KMS_SECRET_KEY) \
+               -e cluo_backup_aws_access_key_id=$(CLUO_BACKUP_AWS_ACCESS_KEY_ID) \
+               -e cluo_backup_aws_secret_access_key=$(CLUO_BACKUP_AWS_SECRET_ACCESS_KEY) \
+               -e cluo_backup_aws_region=$(CLUO_BACKUP_AWS_REGION) \
+               -e cluo_backup_s3_bucket=$(CLUO_BACKUP_S3_BUCKET) \
+               -e cluo_backup_passphrase=$(CLUO_BACKUP_PASSPHRASE)
 
 # SSH_PUBLIC_KEY contains spaces so it must be passed via a vars file, not -e
 ANSIBLE_SSH_VARS_FILE := /tmp/homelab_ssh_vars.yml
