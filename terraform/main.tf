@@ -149,6 +149,95 @@ resource "aws_iam_access_key" "backup" {
   user = aws_iam_user.backup.name
 }
 
+# S3 bucket for cluo's MinIO backups (cluo-staging-backup container in
+# docker/cluo/staging.docker-compose.yml). Cluo runs on this VPS today, but
+# its own Terraform (in the cluo repo) is an unprovisioned future-deployment
+# blueprint, not what's live — so this credential is managed here, alongside
+# the rest of what's actually deployed on this server.
+resource "aws_s3_bucket" "cluo_minio_backup" {
+  bucket = "cluo-minio-backups-staging"
+
+  tags = {
+    Name       = "cluo-minio-backup-staging"
+    managed-by = "terraform"
+  }
+}
+
+resource "aws_s3_bucket_versioning" "cluo_minio_backup" {
+  bucket = aws_s3_bucket.cluo_minio_backup.id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "cluo_minio_backup" {
+  bucket = aws_s3_bucket.cluo_minio_backup.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "cluo_minio_backup" {
+  bucket = aws_s3_bucket.cluo_minio_backup.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "cluo_minio_backup" {
+  bucket = aws_s3_bucket.cluo_minio_backup.id
+
+  rule {
+    id     = "minio-backup-retention"
+    status = "Enabled"
+    filter {}
+
+    expiration {
+      days = 30 # backup.sh also self-prunes after 30 days; this is a backstop
+    }
+  }
+}
+
+# Dedicated IAM user for the cluo-staging-backup container (scoped to this bucket only)
+resource "aws_iam_user" "cluo_minio_backup" {
+  name = "cluo-minio-backup-staging-user"
+
+  tags = {
+    managed-by = "terraform"
+  }
+}
+
+resource "aws_iam_user_policy" "cluo_minio_backup" {
+  name = "cluo-minio-backup-staging-s3"
+  user = aws_iam_user.cluo_minio_backup.name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["s3:PutObject", "s3:GetObject", "s3:DeleteObject"]
+        Resource = "${aws_s3_bucket.cluo_minio_backup.arn}/*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = "s3:ListBucket"
+        Resource = aws_s3_bucket.cluo_minio_backup.arn
+      }
+    ]
+  })
+}
+
+resource "aws_iam_access_key" "cluo_minio_backup" {
+  user = aws_iam_user.cluo_minio_backup.name
+}
+
 # Cloudflare DNS records for homelab (henga.dev)
 resource "cloudflare_record" "root" {
   provider = cloudflare.homelab

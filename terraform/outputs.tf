@@ -33,3 +33,20 @@ output "backup_iam_secret_access_key" {
   value       = aws_iam_access_key.backup.secret
   sensitive   = true
 }
+
+output "cluo_minio_backup_bucket_name" {
+  description = "S3 bucket name for cluo's MinIO backups"
+  value       = aws_s3_bucket.cluo_minio_backup.bucket
+}
+
+output "cluo_minio_backup_iam_access_key_id" {
+  description = "AWS Access Key ID for cluo-staging-backup — copy to CLUO_BACKUP_AWS_ACCESS_KEY_ID in .env"
+  value       = aws_iam_access_key.cluo_minio_backup.id
+  sensitive   = true
+}
+
+output "cluo_minio_backup_iam_secret_access_key" {
+  description = "AWS Secret Access Key for cluo-staging-backup — copy to CLUO_BACKUP_AWS_SECRET_ACCESS_KEY in .env"
+  value       = aws_iam_access_key.cluo_minio_backup.secret
+  sensitive   = true
+}
