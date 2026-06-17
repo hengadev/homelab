@@ -21,11 +21,13 @@ Hosts: **homelab**, **cluo**.
 | `terraform-homelab` | Terraform admin for homelab. | homelab's Terraform-managed resources (VPS, DNS, S3 backup bucket, IAM). | `terraform-homelab` |
 | `terraform-cluo` | Terraform admin for cluo. | `cluo-*`-named resources only (S3/CloudFront/ACM/SES/KMS, plus IAM create/tag for `cluo-*` users). | `terraform-cluo` |
 | `cluo-app` | Least-privilege runtime credential for cluo (e.g. `make release-desktop` uploads). | `cluo-assets-prod` bucket only — Get/Put/Delete/List, no other permissions. | `cluo-app` |
+| `cluo-minio-backup-staging-user` | Least-privilege credential for the `cluo-staging-backup` container (homelab `docker/cluo/staging.docker-compose.yml`), which uploads GPG-encrypted MinIO snapshots. Provisioned by cluo's own Terraform (`cluo/infrastructure/terraform/minio-backup.tf`), not homelab's. | `cluo-minio-backups-staging` bucket only — Get/Put/Delete/List, no other permissions. | not in `~/.aws/credentials` — used directly inside the backup container, not from a developer's CLI. |
 | `homelab-vaultwarden-backup` | Pre-existing, predates this reorg. Used by the nightly Vaultwarden backup cron (see homelab's `CONTEXT.md` → Backup). | `homelab-backups-henga` bucket. | not in `~/.aws/credentials` — used directly inside the backup container, not from a developer's CLI. |
 | `leviosa-bucket` | **Orphaned, not part of any current project's credential set.** AWS has `AWSCompromisedKeyQuarantineV3` attached to this user, and its access key is still listed `Active`. Likely the user that originally owned the two now-deleted orphaned leviosa buckets (see below). | Unknown — not investigated further as part of this doc. | not in `~/.aws/credentials` |
 
 Buckets: `cluo-assets-prod` (cluo production assets, public-read on
-`staging/desktop/*`), `homelab-backups-henga` (nightly Vaultwarden backup).
+`staging/desktop/*`), `cluo-minio-backups-staging` (cluo MinIO backups),
+`homelab-backups-henga` (nightly Vaultwarden backup).
 
 **Known issue:** `leviosa-bucket`'s quarantined-but-active key has not been
 investigated or cleaned up. Treat as a live finding, not a planned task —
