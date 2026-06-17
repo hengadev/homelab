@@ -88,6 +88,22 @@ media.{$CLUO_DOMAIN} {
     }
 }
 
+links.{$DOMAIN} {
+    # Only rewrite the bare root request so asset requests (JS/CSS/images)
+    # pass through untouched to the same portfolio backend.
+    @root path /
+    rewrite @root /links?{query}
+
+    reverse_proxy portfolio:3000
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy no-referrer
+        Permissions-Policy "geolocation=(), microphone=(), camera=()"
+    }
+}
+
 anki.{$DOMAIN} {
     reverse_proxy anki:27701
     header {

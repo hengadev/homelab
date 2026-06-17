@@ -190,6 +190,16 @@ resource "cloudflare_record" "anki_api" {
   proxied  = false
 }
 
+resource "cloudflare_record" "links" {
+  provider = cloudflare.homelab
+  zone_id  = var.cloudflare_zone_id
+  name     = "links"
+  value    = hcloud_server.homelab.ipv4_address
+  type     = "A"
+  ttl      = 300
+  proxied  = false
+}
+
 resource "cloudflare_record" "leviosa" {
   provider = cloudflare.homelab
   zone_id  = var.cloudflare_zone_id
