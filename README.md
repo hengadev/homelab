@@ -1,6 +1,6 @@
 # Homelab Infrastructure
 
-Production-ready, fully reproducible homelab infrastructure deployed with a single command. Provisions a Hetzner VPS, hardens it, and runs Caddy + Vaultwarden + Portfolio + backup services via Docker Compose.
+Production-ready, fully reproducible homelab infrastructure deployed with a single command. Provisions a Hetzner VPS, hardens it, and runs Caddy + Vaultwarden + Portfolio + an Anki sync server + demo apps + backup services via Docker Compose.
 
 ## Architecture
 
@@ -11,27 +11,31 @@ Production-ready, fully reproducible homelab infrastructure deployed with a sing
 └─────────────────┘      └──────────────┘      │   Proxy)    │
                                                  └─────────────┘
                                                       │
-                       ┌──────────────────────────────┼─────────────────┐
-                       ↓                              ↓                 ↓
-                 ┌─────────────┐            ┌──────────────┐   ┌──────────────┐
-                 │  Vaultwarden│            │   Portfolio  │   │   Backup     │
-                 │  (Passwords)│            │   (Website)  │   │   (S3)       │
-                 └─────────────┘            └──────────────┘   └──────────────┘
+       ┌───────────────┬───────────────┬─────────────┼──────────────┬───────────────┐
+       ↓                ↓               ↓             ↓              ↓               ↓
+ ┌───────────┐   ┌───────────┐   ┌───────────┐  ┌───────────┐ ┌───────────┐   ┌───────────┐
+ │Vaultwarden│   │ Portfolio │   │   Anki    │  │ Anki API  │ │   Demos   │   │  Backup   │
+ │(Passwords)│   │ (Website) │   │  (Sync)   │  │  (HTTP)   │ │(Leviosa,  │   │   (S3)    │
+ │           │   │           │   │           │  │           │ │ Germinal) │   │           │
+ └───────────┘   └───────────┘   └───────────┘  └───────────┘ └───────────┘   └───────────┘
 ```
 
 **Stack Components:**
-- **Terraform**: Provisions Hetzner VPS + Cloudflare DNS
-- **Ansible**: Hardens server, installs Docker, deploys services
-- **Docker Compose**: Caddy (TLS) + Vaultwarden + Portfolio + Backup
+- **Terraform**: Provisions Hetzner VPS + Cloudflare DNS + the S3 backup bucket/IAM user
+- **Ansible**: Hardens the server (UFW, SSH), installs Docker, deploys services, restores Vaultwarden from the latest S3 backup on a fresh server
+- **Docker Compose**: Caddy (TLS) + Vaultwarden + Portfolio + Anki sync server + Anki API + demo apps + Backup
 - **Caddy**: Automatic HTTPS, reverse proxy
+- **Portfolio**: Personal portfolio website
 - **Vaultwarden**: Self-hosted password manager
-- **Backup**: Encrypted nightly backups to S3
+- **Anki sync server + Anki API**: Self-hosted Anki sync server, plus a small authenticated HTTP API (`anki-api`) for managing decks/cards programmatically (used for spaced-repetition flashcards)
+- **Demo apps**: `leviosa-demo` and `germinal-demo` — live demo deployments (with mock data) of client portfolio projects, used to showcase the work to prospective clients without exposing real client data
+- **Backup**: Encrypted nightly backups of Vaultwarden + Anki data to S3
 
 ## Prerequisites
 
 - Hetzner Cloud account with API token
 - Cloudflare account with API token and zone ID
-- AWS S3 bucket for backups
+- AWS account/profile with permissions to create S3 buckets and IAM users (used locally by Terraform)
 - Domain name pointing to Cloudflare
 - SSH key pair for server access
 
@@ -59,7 +63,12 @@ Production-ready, fully reproducible homelab infrastructure deployed with a sing
 
 4. **Access services**
    - Portfolio: `https://yourdomain.com`
+   - Portfolio links page: `https://links.yourdomain.com`
    - Vaultwarden: `https://vault.yourdomain.com`
+   - Anki sync server: `https://anki.yourdomain.com`
+   - Anki API: `https://anki-api.yourdomain.com`
+   - Leviosa demo: `https://leviosa.yourdomain.com`
+   - Germinal demo: `https://germinal.yourdomain.com`
 
 ## Environment Variables
 
@@ -73,31 +82,26 @@ Production-ready, fully reproducible homelab infrastructure deployed with a sing
 | `SSH_PRIVATE_KEY_PATH` | Path to private key | `~/.ssh/id_ed25519` |
 | `ADMIN_TOKEN` | Vaultwarden admin token | `random48chars...` |
 | `ADMIN_EMAIL` | Let's Encrypt email | `admin@example.com` |
-| `AWS_ACCESS_KEY_ID` | S3 access key | `AKIAIOSFODNN7EXAMPLE` |
-| `AWS_SECRET_ACCESS_KEY` | S3 secret key | `wJalrXUtnFEMI/K7MDENG...` |
-| `AWS_DEFAULT_REGION` | S3 region | `us-east-1` |
-| `BACKUP_S3_BUCKET` | S3 bucket URI | `s3://homelab-backups` |
-| `BACKUP_PASSPHRASE` | Backup encryption | `strongpassphrase` |
-| `GITHUB_USERNAME` | For portfolio ref | `yourusername` |
-
-## GitHub Actions
-
-Add these secrets to your repository:
-
-```
-SERVER_IP, SSH_PRIVATE_KEY, DOMAIN, ADMIN_TOKEN, ADMIN_EMAIL,
-AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_DEFAULT_REGION,
-BACKUP_S3_BUCKET, BACKUP_PASSPHRASE, GITHUB_USERNAME, SSH_PUBLIC_KEY
-```
-
-The workflow triggers on push to `main`.
+| `AWS_PROFILE` | Local AWS CLI profile Terraform uses to create the backup bucket/IAM user | `your-profile-name` |
+| `AWS_DEFAULT_REGION` | AWS region for the S3 backup bucket | `us-east-1` |
+| `BACKUP_AWS_ACCESS_KEY_ID` / `BACKUP_AWS_SECRET_ACCESS_KEY` | Scoped IAM credentials for the backup container, generated by `make init` (`terraform output backup_iam_access_key_id` / `-raw backup_iam_secret_access_key`) | — |
+| `BACKUP_S3_BUCKET` | S3 bucket name (no `s3://` prefix), must be globally unique | `homelab-backups-yourname` |
+| `BACKUP_PASSPHRASE` | Backup encryption (symmetric GPG) | `strongpassphrase` |
+| `GITHUB_USERNAME` | For portfolio image reference | `yourusername` |
+| `ANKI_USERNAME` / `ANKI_PASSWORD` | Credentials for the Anki sync server (used by Anki desktop/mobile clients) | — |
+| `ANKI_API_KEY` | API key required by the `anki-api` container (`X-API-Key` header) | — |
+| `LEVIOSA_DEMO_*` / `GERMINAL_DEMO_*` | Mock admin/staff/partner/client credentials for the demo apps | — |
 
 ## Day-2 Operations
 
 ```bash
-make ssh    # SSH into server
-make logs   # View Docker logs
-make update # Pull and restart services
+make ssh              # SSH into the server
+make logs             # View Docker logs
+make update           # Pull and restart all homelab services
+make deploy-portfolio # Build, push, and restart the portfolio container
+make reload-portfolio # Pull latest portfolio image and restart (skip build)
+make rebuild-anki-api # Rebuild and restart the anki-api container
+make deploy-demos     # Pull latest demo images and restart leviosa-demo/germinal-demo
 ```
 
 ### Manual backup
