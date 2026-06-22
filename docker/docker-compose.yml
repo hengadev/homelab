@@ -76,7 +76,6 @@ services:
     volumes:
       - /opt/homelab/data/vaultwarden:/data:ro
       - /opt/homelab/data/anki:/anki-data:ro
-      - /opt/homelab/data/minio:/minio-data:ro
       - ./backup.sh:/backup.sh:ro
     environment:
       # Map dedicated backup IAM credentials to standard AWS env vars inside the container
@@ -95,49 +94,6 @@ services:
     restart: unless-stopped
     networks:
       - internal
-
-  minio:
-    image: minio/minio:latest
-    container_name: homelab-minio
-    command: server /data --console-address ":9001"
-    environment:
-      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
-      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
-      - MINIO_KMS_SECRET_KEY=${MINIO_KMS_SECRET_KEY}
-      - MINIO_SERVER_URL=https://media.${CLUO_DOMAIN}
-    volumes:
-      - /opt/homelab/data/minio:/data
-    restart: unless-stopped
-    networks:
-      - internal
-      - proxy
-
-  vault:
-    image: hashicorp/vault:1.15
-    container_name: homelab-vault
-    restart: unless-stopped
-    user: "100:1000"
-    entrypoint: ["/bin/sh", "-c", "exec vault server -config=/vault/config/vault.hcl"]
-    cap_add:
-      - IPC_LOCK
-    environment:
-      VAULT_ADDR: http://0.0.0.0:8200
-      VAULT_API_ADDR: http://0.0.0.0:8200
-    expose:
-      - "8200"
-      - "8201"
-    volumes:
-      - vault_data:/vault/file
-      - ./vault/config:/vault/config:ro
-    networks:
-      - internal
-      - proxy
-    healthcheck:
-      test: ["CMD", "vault", "status"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
 
   leviosa-demo:
     image: henga/leviosa:frontend-latest
@@ -181,6 +137,4 @@ volumes:
   caddy_data:
     driver: local
   caddy_config:
-    driver: local
-  vault_data:
     driver: local
