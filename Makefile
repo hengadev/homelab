@@ -1,4 +1,4 @@
-.PHONY: help init setup deploy update destroy ssh logs generate-tfvars generate-inventory deploy-portfolio reload-portfolio rebuild-anki-api rebuild-cluo-prod rebuild-cluo-staging logs-cluo-prod logs-cluo-staging deploy-demos
+.PHONY: help init setup deploy update destroy ssh logs generate-tfvars generate-inventory deploy-portfolio reload-portfolio rebuild-anki-api deploy-demos
 
 include .env
 export
@@ -15,16 +15,6 @@ ANSIBLE_VARS = -e domain=$(DOMAIN) \
                -e backup_s3_bucket=$(BACKUP_S3_BUCKET) \
                -e backup_passphrase=$(BACKUP_PASSPHRASE) \
                -e github_username=$(GITHUB_USERNAME) \
-               -e cluo_registry=$(CLUO_REGISTRY) \
-               -e cluo_prod_tag=$(CLUO_PROD_TAG) \
-               -e cluo_staging_tag=$(CLUO_STAGING_TAG) \
-               -e cluo_prod_db_name=$(CLUO_PROD_DB_NAME) \
-               -e cluo_prod_db_user=$(CLUO_PROD_DB_USER) \
-               -e cluo_prod_db_password=$(CLUO_PROD_DB_PASSWORD) \
-               -e cluo_staging_db_name=$(CLUO_STAGING_DB_NAME) \
-               -e cluo_staging_db_user=$(CLUO_STAGING_DB_USER) \
-               -e cluo_staging_db_password=$(CLUO_STAGING_DB_PASSWORD) \
-	               -e cluo_domain=$(CLUO_DOMAIN) \
 	               -e anki_username=$(ANKI_USERNAME) \
 	               -e anki_password=$(ANKI_PASSWORD) \
 	               -e anki_api_key=$(ANKI_API_KEY) \
@@ -37,15 +27,7 @@ ANSIBLE_VARS = -e domain=$(DOMAIN) \
                -e germinal_demo_admin_email=$(GERMINAL_DEMO_ADMIN_EMAIL) \
                -e germinal_demo_admin_password=$(GERMINAL_DEMO_ADMIN_PASSWORD) \
                -e germinal_demo_staff_email=$(GERMINAL_DEMO_STAFF_EMAIL) \
-               -e germinal_demo_staff_password=$(GERMINAL_DEMO_STAFF_PASSWORD) \
-               -e minio_root_user=$(MINIO_ROOT_USER) \
-               -e minio_root_password=$(MINIO_ROOT_PASSWORD) \
-               -e minio_kms_secret_key=$(MINIO_KMS_SECRET_KEY) \
-               -e cluo_backup_aws_access_key_id=$(CLUO_BACKUP_AWS_ACCESS_KEY_ID) \
-               -e cluo_backup_aws_secret_access_key=$(CLUO_BACKUP_AWS_SECRET_ACCESS_KEY) \
-               -e cluo_backup_aws_region=$(CLUO_BACKUP_AWS_REGION) \
-               -e cluo_backup_s3_bucket=$(CLUO_BACKUP_S3_BUCKET) \
-               -e cluo_backup_passphrase=$(CLUO_BACKUP_PASSPHRASE)
+               -e germinal_demo_staff_password=$(GERMINAL_DEMO_STAFF_PASSWORD)
 
 # SSH_PUBLIC_KEY contains spaces so it must be passed via a vars file, not -e
 ANSIBLE_SSH_VARS_FILE := /tmp/homelab_ssh_vars.yml
@@ -62,9 +44,6 @@ generate-tfvars: ## Generate terraform.tfvars from .env
 	@echo "cloudflare_api_token = \"$(CLOUDFLARE_API_TOKEN)\"" >> terraform/terraform.tfvars
 	@echo "cloudflare_zone_id = \"$(CLOUDFLARE_ZONE_ID)\"" >> terraform/terraform.tfvars
 	@echo "domain = \"$(DOMAIN)\"" >> terraform/terraform.tfvars
-	@echo "cloudflare_cluo_api_token = \"$(CLOUDFLARE_CLUO_API_TOKEN)\"" >> terraform/terraform.tfvars
-	@echo "cloudflare_cluo_zone_id = \"$(CLOUDFLARE_CLUO_ZONE_ID)\"" >> terraform/terraform.tfvars
-	@echo "cluo_domain = \"$(CLUO_DOMAIN)\"" >> terraform/terraform.tfvars
 	@echo "ssh_public_key = \"$(SSH_PUBLIC_KEY)\"" >> terraform/terraform.tfvars
 	@echo "ssh_private_key_path = \"$(SSH_PRIVATE_KEY_PATH)\"" >> terraform/terraform.tfvars
 	@echo "backup_s3_bucket     = \"$(BACKUP_S3_BUCKET)\"" >> terraform/terraform.tfvars
@@ -134,18 +113,6 @@ ssh: ## SSH into the server
 
 logs: ## View Docker logs
 	@ssh -i $(SSH_PRIVATE_KEY_PATH) deploy@$(SERVER_IP) "cd /opt/homelab && docker compose logs -f"
-
-rebuild-cluo-prod: ## Pull latest images and restart cluo production
-	@ssh -i $(SSH_PRIVATE_KEY_PATH) deploy@$(SERVER_IP) "cd /opt/cluo && docker compose pull && docker compose up -d --remove-orphans"
-
-rebuild-cluo-staging: ## Pull latest images and restart cluo staging
-	@ssh -i $(SSH_PRIVATE_KEY_PATH) deploy@$(SERVER_IP) "cd /opt/cluo-staging && docker compose pull && docker compose up -d --remove-orphans"
-
-logs-cluo-prod: ## View cluo production logs
-	@ssh -i $(SSH_PRIVATE_KEY_PATH) deploy@$(SERVER_IP) "cd /opt/cluo && docker compose logs -f"
-
-logs-cluo-staging: ## View cluo staging logs
-	@ssh -i $(SSH_PRIVATE_KEY_PATH) deploy@$(SERVER_IP) "cd /opt/cluo-staging && docker compose logs -f"
 
 rebuild-anki-api: ## Rebuild and restart the anki-api container on the server
 	@ssh -i $(SSH_PRIVATE_KEY_PATH) deploy@$(SERVER_IP) "cd /opt/homelab && docker compose build anki-api && docker compose up -d --no-deps anki-api"

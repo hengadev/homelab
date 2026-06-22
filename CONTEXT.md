@@ -16,8 +16,6 @@ The set of services managed under `/opt/homelab/` via the main
 `docker-compose.yml`. This is the authoritative boundary of "what the homelab
 runs." New self-hosted services are always added here.
 
-**Not to be confused with:** the Cluo tenant (see [Temporary Tenant](#temporary-tenant-cluo)).
-
 ### Portfolio
 Personal website at `henga.dev`. A containerized app (image: `henga/portfolio`)
 displaying CV and projects. Blog section planned but not yet live. Stateless —
@@ -55,13 +53,6 @@ The full service deployment cycle, triggered by `make deploy` or automatically
 by GitHub Actions on push to `main`. Runs the Ansible `deploy.yml` playbook,
 which syncs compose files, templates the `.env`, pulls images, and starts
 containers.
-
-### Temporary Tenant (Cluo)
-A separate application (not a homelab tool) co-hosted on this VPS to avoid the
-cost of a second server. Cluo runs under `/opt/cluo/` and `/opt/cluo-staging/`
-with its own compose files and its own Cloudflare zone (`clientvault.fr`).
-It will be migrated to its own VPS later. Treat it as out-of-scope when
-reasoning about homelab architecture.
 
 ---
 
