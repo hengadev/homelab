@@ -43,6 +43,22 @@
         group: deploy
         mode: "0750"
 
+    - name: Create nomi data directory
+      ansible.builtin.file:
+        path: /opt/homelab/data/nomi
+        state: directory
+        owner: deploy
+        group: deploy
+        mode: "0750"
+
+    - name: Create ollama data directory
+      ansible.builtin.file:
+        path: /opt/homelab/data/ollama
+        state: directory
+        owner: deploy
+        group: deploy
+        mode: "0750"
+
     # =========================================================================
     # Vaultwarden restore (skipped when data directory already has content)
     # =========================================================================
@@ -160,6 +176,26 @@
         - { src: ../docker/anki-api/requirements.txt, dest: /opt/homelab/anki-api/requirements.txt }
         - { src: ../docker/anki-api/main.py, dest: /opt/homelab/anki-api/main.py }
 
+    - name: Create nomi source directory on server
+      ansible.builtin.file:
+        path: /opt/homelab/nomi
+        state: directory
+        owner: deploy
+        group: deploy
+        mode: "0755"
+
+    - name: Sync Nomi source to server
+      ansible.posix.synchronize:
+        src: "{{ nomi_source_path }}/"
+        dest: /opt/homelab/nomi/
+        delete: true
+        rsync_opts:
+          - "--exclude=.git"
+          - "--exclude=data"
+          - "--exclude=web/node_modules"
+          - "--exclude=web/.svelte-kit"
+          - "--exclude=web/build"
+
     - name: Copy Caddyfile to server
       ansible.builtin.copy:
         src: ../docker/Caddyfile
@@ -195,6 +231,12 @@
     - name: Start Docker services
       ansible.builtin.command:
         cmd: docker compose up -d --remove-orphans
+        chdir: /opt/homelab
+      changed_when: true
+
+    - name: Pull Ollama model
+      ansible.builtin.command:
+        cmd: docker compose exec -T ollama ollama pull {{ nomi_ollama_model }}
         chdir: /opt/homelab
       changed_when: true
 

@@ -1,10 +1,11 @@
-.PHONY: help init setup deploy update destroy ssh logs generate-tfvars generate-inventory deploy-portfolio reload-portfolio rebuild-anki-api deploy-demos
+.PHONY: help init setup deploy update destroy ssh logs generate-tfvars generate-inventory deploy-portfolio reload-portfolio rebuild-anki-api deploy-demos deploy-nomi
 
 include .env
 export
 
 SERVER_IP    := $(shell cd terraform && terraform output -raw server_ip 2>/dev/null)
 PORTFOLIO_DIR ?= $(HOME)/Documents/projects/gary/portfolio
+NOMI_DIR     ?= $(HOME)/Documents/projects/nomi
 
 ANSIBLE_VARS = -e domain=$(DOMAIN) \
                -e admin_token=$(ADMIN_TOKEN) \
@@ -27,7 +28,15 @@ ANSIBLE_VARS = -e domain=$(DOMAIN) \
                -e germinal_demo_admin_email=$(GERMINAL_DEMO_ADMIN_EMAIL) \
                -e germinal_demo_admin_password=$(GERMINAL_DEMO_ADMIN_PASSWORD) \
                -e germinal_demo_staff_email=$(GERMINAL_DEMO_STAFF_EMAIL) \
-               -e germinal_demo_staff_password=$(GERMINAL_DEMO_STAFF_PASSWORD)
+               -e germinal_demo_staff_password=$(GERMINAL_DEMO_STAFF_PASSWORD) \
+               -e ollama_keep_alive=$(OLLAMA_KEEP_ALIVE) \
+               -e nomi_ollama_model=$(NOMI_OLLAMA_MODEL) \
+               -e nomi_resume_variants_lang=$(NOMI_RESUME_VARIANTS_LANG) \
+               -e nomi_source_path=$(NOMI_DIR) \
+               -e nomi_brightdata_api_key=$(NOMI_BRIGHTDATA_API_KEY) \
+               -e nomi_brightdata_customer=$(NOMI_BRIGHTDATA_CUSTOMER) \
+               -e nomi_brightdata_zone=$(NOMI_BRIGHTDATA_ZONE) \
+               -e nomi_brightdata_port=$(NOMI_BRIGHTDATA_PORT)
 
 # SSH_PUBLIC_KEY contains spaces so it must be passed via a vars file, not -e
 ANSIBLE_SSH_VARS_FILE := /tmp/homelab_ssh_vars.yml
@@ -121,3 +130,15 @@ deploy-demos: ## Pull latest demo images and restart leviosa-demo and germinal-d
 	@scp -i $(SSH_PRIVATE_KEY_PATH) docker/docker-compose.yml deploy@$(SERVER_IP):/opt/homelab/docker-compose.yml
 	@scp -i $(SSH_PRIVATE_KEY_PATH) docker/Caddyfile deploy@$(SERVER_IP):/opt/homelab/Caddyfile
 	@ssh -i $(SSH_PRIVATE_KEY_PATH) deploy@$(SERVER_IP) "cd /opt/homelab && docker compose pull leviosa-demo germinal-demo && docker compose up -d --no-deps leviosa-demo germinal-demo && docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile"
+
+deploy-nomi: ## Rsync Nomi source, rebuild images, and restart nomi containers
+	@rsync -az --delete -e "ssh -i $(SSH_PRIVATE_KEY_PATH)" \
+		--exclude=.git \
+		--exclude=data \
+		--exclude=web/node_modules \
+		--exclude=web/.svelte-kit \
+		--exclude=web/build \
+		$(NOMI_DIR)/ deploy@$(SERVER_IP):/opt/homelab/nomi/
+	@scp -i $(SSH_PRIVATE_KEY_PATH) docker/docker-compose.yml deploy@$(SERVER_IP):/opt/homelab/docker-compose.yml
+	@scp -i $(SSH_PRIVATE_KEY_PATH) docker/Caddyfile deploy@$(SERVER_IP):/opt/homelab/Caddyfile
+	@ssh -i $(SSH_PRIVATE_KEY_PATH) deploy@$(SERVER_IP) "cd /opt/homelab && docker compose build nomi-api nomi-web && docker compose up -d --no-deps nomi-api nomi-web && docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile"
