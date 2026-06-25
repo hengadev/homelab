@@ -122,6 +122,7 @@ services:
       - NOMI_BRIGHTDATA_CUSTOMER=${NOMI_BRIGHTDATA_CUSTOMER}
       - NOMI_BRIGHTDATA_ZONE=${NOMI_BRIGHTDATA_ZONE}
       - NOMI_BRIGHTDATA_PORT=${NOMI_BRIGHTDATA_PORT}
+      - NOMI_AUTH_TOKEN=${NOMI_AUTH_TOKEN}
     depends_on:
       - ollama
     restart: unless-stopped
@@ -134,6 +135,7 @@ services:
     environment:
       - ORIGIN=https://nomi.${DOMAIN}
       - PORT=3000
+      - NOMI_AUTH_TOKEN=${NOMI_AUTH_TOKEN}
     depends_on:
       - nomi-api
     restart: unless-stopped

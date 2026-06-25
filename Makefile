@@ -36,7 +36,8 @@ ANSIBLE_VARS = -e domain=$(DOMAIN) \
                -e nomi_brightdata_api_key=$(NOMI_BRIGHTDATA_API_KEY) \
                -e nomi_brightdata_customer=$(NOMI_BRIGHTDATA_CUSTOMER) \
                -e nomi_brightdata_zone=$(NOMI_BRIGHTDATA_ZONE) \
-               -e nomi_brightdata_port=$(NOMI_BRIGHTDATA_PORT)
+               -e nomi_brightdata_port=$(NOMI_BRIGHTDATA_PORT) \
+               -e nomi_auth_token=$(NOMI_AUTH_TOKEN)
 
 # SSH_PUBLIC_KEY contains spaces so it must be passed via a vars file, not -e
 ANSIBLE_SSH_VARS_FILE := /tmp/homelab_ssh_vars.yml
