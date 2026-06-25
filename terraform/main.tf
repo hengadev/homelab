@@ -195,6 +195,16 @@ resource "cloudflare_record" "links" {
   proxied  = false
 }
 
+resource "cloudflare_record" "nomi" {
+  provider = cloudflare.homelab
+  zone_id  = var.cloudflare_zone_id
+  name     = "nomi"
+  value    = hcloud_server.homelab.ipv4_address
+  type     = "A"
+  ttl      = 300
+  proxied  = false
+}
+
 resource "cloudflare_record" "leviosa" {
   provider = cloudflare.homelab
   zone_id  = var.cloudflare_zone_id
