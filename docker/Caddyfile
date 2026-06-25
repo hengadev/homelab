@@ -61,6 +61,19 @@ vault.{$DOMAIN} {
     }
 }
 
+nomi.{$DOMAIN} {
+    # Same /api/* split the SvelteKit dev server's vite proxy does locally —
+    # same-origin paths, no CORS, no separate api.* hostname.
+    reverse_proxy /api/* nomi-api:8080
+    reverse_proxy nomi-web:3000
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy no-referrer
+    }
+}
+
 leviosa.{$DOMAIN} {
     reverse_proxy leviosa-demo:3000
     header {

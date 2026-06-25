@@ -95,6 +95,51 @@ services:
     networks:
       - internal
 
+  ollama:
+    image: ollama/ollama:latest
+    container_name: homelab-ollama
+    volumes:
+      - /opt/homelab/data/ollama:/root/.ollama
+    environment:
+      - OLLAMA_KEEP_ALIVE=${OLLAMA_KEEP_ALIVE}
+    restart: unless-stopped
+    networks:
+      - internal
+
+  nomi-api:
+    build: ./nomi
+    container_name: homelab-nomi-api
+    volumes:
+      - /opt/homelab/data/nomi:/data
+    environment:
+      - NOMI_DB_PATH=/data/nomi.db
+      - NOMI_SERVER_ADDR=:8080
+      - NOMI_OLLAMA_HOST=http://ollama:11434
+      - NOMI_OLLAMA_MODEL=${NOMI_OLLAMA_MODEL}
+      - NOMI_RESUME_VARIANTS_PATH=/data/resume-variants
+      - NOMI_RESUME_VARIANTS_LANG=${NOMI_RESUME_VARIANTS_LANG}
+      - NOMI_BRIGHTDATA_API_KEY=${NOMI_BRIGHTDATA_API_KEY}
+      - NOMI_BRIGHTDATA_CUSTOMER=${NOMI_BRIGHTDATA_CUSTOMER}
+      - NOMI_BRIGHTDATA_ZONE=${NOMI_BRIGHTDATA_ZONE}
+      - NOMI_BRIGHTDATA_PORT=${NOMI_BRIGHTDATA_PORT}
+    depends_on:
+      - ollama
+    restart: unless-stopped
+    networks:
+      - internal
+
+  nomi-web:
+    build: ./nomi/web
+    container_name: homelab-nomi-web
+    environment:
+      - ORIGIN=https://nomi.${DOMAIN}
+      - PORT=3000
+    depends_on:
+      - nomi-api
+    restart: unless-stopped
+    networks:
+      - internal
+
   leviosa-demo:
     image: henga/leviosa:frontend-latest
     container_name: homelab-leviosa-demo
