@@ -224,3 +224,23 @@ resource "cloudflare_record" "germinal" {
   ttl      = 300
   proxied  = false
 }
+
+resource "cloudflare_record" "ci" {
+  provider = cloudflare.homelab
+  zone_id  = var.cloudflare_zone_id
+  name     = "ci"
+  value    = hcloud_server.homelab.ipv4_address
+  type     = "A"
+  ttl      = 300
+  proxied  = false
+}
+
+resource "cloudflare_record" "releases" {
+  provider = cloudflare.homelab
+  zone_id  = var.cloudflare_zone_id
+  name     = "releases"
+  value    = hcloud_server.homelab.ipv4_address
+  type     = "A"
+  ttl      = 300
+  proxied  = false
+}
