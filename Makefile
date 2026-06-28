@@ -37,7 +37,11 @@ ANSIBLE_VARS = -e domain=$(DOMAIN) \
                -e nomi_brightdata_customer=$(NOMI_BRIGHTDATA_CUSTOMER) \
                -e nomi_brightdata_zone=$(NOMI_BRIGHTDATA_ZONE) \
                -e nomi_brightdata_port=$(NOMI_BRIGHTDATA_PORT) \
-               -e nomi_auth_token=$(NOMI_AUTH_TOKEN)
+               -e nomi_auth_token=$(NOMI_AUTH_TOKEN) \
+               -e woodpecker_admin=$(WOODPECKER_ADMIN) \
+               -e woodpecker_github_client=$(WOODPECKER_GITHUB_CLIENT) \
+               -e woodpecker_github_secret=$(WOODPECKER_GITHUB_SECRET) \
+               -e woodpecker_agent_secret=$(WOODPECKER_AGENT_SECRET)
 
 # SSH_PUBLIC_KEY contains spaces so it must be passed via a vars file, not -e
 ANSIBLE_SSH_VARS_FILE := /tmp/homelab_ssh_vars.yml
