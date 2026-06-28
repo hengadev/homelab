@@ -95,3 +95,21 @@ germinal.{$DOMAIN} {
         Permissions-Policy "geolocation=(), microphone=(), camera=()"
     }
 }
+
+ci.{$DOMAIN} {
+    reverse_proxy woodpecker-server:8000
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy no-referrer
+    }
+}
+
+releases.{$DOMAIN} {
+    root * /srv/releases
+    file_server
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    }
+}

@@ -10,6 +10,7 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
+      - /opt/homelab/data/releases:/srv/releases:ro
     env_file:
       - .env
     restart: unless-stopped
@@ -170,6 +171,45 @@ services:
       - MOCK_ADMIN_PASSWORD=${GERMINAL_DEMO_ADMIN_PASSWORD}
       - MOCK_STAFF_EMAIL=${GERMINAL_DEMO_STAFF_EMAIL}
       - MOCK_STAFF_PASSWORD=${GERMINAL_DEMO_STAFF_PASSWORD}
+    restart: unless-stopped
+    networks:
+      - internal
+
+  woodpecker-server:
+    image: woodpeckerci/woodpecker-server:v3
+    container_name: homelab-woodpecker-server
+    volumes:
+      - /opt/homelab/data/woodpecker:/var/lib/woodpecker
+    env_file:
+      - .env
+    environment:
+      - WOODPECKER_OPEN=false
+      - WOODPECKER_ADMIN=${WOODPECKER_ADMIN}
+      - WOODPECKER_HOST=https://ci.henga.dev
+      - WOODPECKER_GITHUB=true
+      - WOODPECKER_GITHUB_CLIENT=${WOODPECKER_GITHUB_CLIENT}
+      - WOODPECKER_GITHUB_SECRET=${WOODPECKER_GITHUB_SECRET}
+      - WOODPECKER_AGENT_SECRET=${WOODPECKER_AGENT_SECRET}
+      - WOODPECKER_DATABASE_DRIVER=sqlite3
+      - WOODPECKER_DATABASE_DATASOURCE=/var/lib/woodpecker/woodpecker.db
+    restart: unless-stopped
+    networks:
+      - internal
+
+  woodpecker-agent:
+    image: woodpeckerci/woodpecker-agent:v3
+    container_name: homelab-woodpecker-agent
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    env_file:
+      - .env
+    environment:
+      - WOODPECKER_SERVER=woodpecker-server:9000
+      - WOODPECKER_AGENT_SECRET=${WOODPECKER_AGENT_SECRET}
+      - WOODPECKER_BACKEND=docker
+      - WOODPECKER_BACKEND_DOCKER_VOLUMES=/opt/homelab/data/releases:/opt/releases
+    depends_on:
+      - woodpecker-server
     restart: unless-stopped
     networks:
       - internal
