@@ -59,6 +59,22 @@
         group: deploy
         mode: "0750"
 
+    - name: Create woodpecker data directory
+      ansible.builtin.file:
+        path: /opt/homelab/data/woodpecker
+        state: directory
+        owner: deploy
+        group: deploy
+        mode: "0750"
+
+    - name: Create releases data directory
+      ansible.builtin.file:
+        path: /opt/homelab/data/releases
+        state: directory
+        owner: deploy
+        group: deploy
+        mode: "0755"
+
     # =========================================================================
     # Vaultwarden restore (skipped when data directory already has content)
     # =========================================================================
@@ -239,6 +255,7 @@
         cmd: docker compose exec -T ollama ollama pull {{ nomi_ollama_model }}
         chdir: /opt/homelab
       changed_when: true
+      when: nomi_ollama_model is defined and nomi_ollama_model != ""
 
   handlers:
     - name: Restart backup container
