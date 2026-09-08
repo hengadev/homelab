@@ -40,13 +40,23 @@ automatic HTTPS via Let's Encrypt. The `Caddyfile` is the authoritative list of
 exposed services and their subdomains.
 
 ### Backup
-Nightly encrypted backup of Vaultwarden data (runs at 03:00 via cron inside
-the `vaultwarden-backup` container). Flow: `tar` → GPG symmetric encryption
-(passphrase) → upload to S3. The S3 bucket has versioning and SSE-AES256
-enabled. A dedicated IAM user scoped to the backup bucket handles credentials.
+Nightly encrypted backup of Vaultwarden data, Anki data, and the Infisical
+Postgres database (runs at 03:00 via cron inside the `vaultwarden-backup`
+container). Flow: Vaultwarden/Anki are `tar`'d; Infisical is `pg_dump`'d and
+gzipped — both then go through GPG symmetric encryption (passphrase) →
+upload to S3, and are pruned after 30 days by the script itself. The S3
+bucket (`homelab-backups-henga`) has versioning, SSE-AES256, and a lifecycle
+rule (90-day expiration on current objects as a safety net behind the
+script's own pruning, 30-day expiration on noncurrent versions so deleted
+objects don't linger — and cost money — indefinitely under versioning). A
+dedicated IAM user (`homelab-vaultwarden-backup`) scoped to that bucket
+handles credentials for all three backups; it predates Infisical and keeps
+its original name.
 
 On a fresh deploy, Ansible auto-restores the latest backup from S3 if the
-Vaultwarden data directory is empty.
+Vaultwarden data directory is empty. Infisical has no equivalent restore
+automation yet — same as Anki, its backup is one-directional until a
+service needs restore.
 
 ### Infisical
 Self-hosted secrets manager at `secrets.henga.dev` (image `infisical/infisical:latest`).

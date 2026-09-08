@@ -101,6 +101,29 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "backup" {
   }
 }
 
+resource "aws_s3_bucket_lifecycle_configuration" "backup" {
+  bucket = aws_s3_bucket.backup.id
+
+  rule {
+    id     = "expire-old-backups"
+    status = "Enabled"
+
+    filter {}
+
+    # Safety net behind backup.sh's own 30-day pruning of current objects.
+    expiration {
+      days = 90
+    }
+
+    # Versioning is enabled on this bucket, so a deleted object's prior
+    # version becomes "noncurrent" instead of disappearing — without this,
+    # pruned backups keep costing storage forever.
+    noncurrent_version_expiration {
+      noncurrent_days = 30
+    }
+  }
+}
+
 resource "aws_s3_bucket_public_access_block" "backup" {
   bucket = aws_s3_bucket.backup.id
 
