@@ -168,6 +168,46 @@ services:
     networks:
       - internal
 
+  infisical-db:
+    image: postgres:14-alpine
+    container_name: homelab-infisical-db
+    volumes:
+      - /opt/homelab/data/infisical-db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=infisical
+      - POSTGRES_PASSWORD=${INFISICAL_DB_PASSWORD}
+      - POSTGRES_DB=infisical
+    restart: unless-stopped
+    networks:
+      - internal
+
+  infisical-redis:
+    image: redis:7-alpine
+    container_name: homelab-infisical-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - /opt/homelab/data/infisical-redis:/data
+    restart: unless-stopped
+    networks:
+      - internal
+
+  infisical:
+    image: infisical/infisical:latest
+    container_name: homelab-infisical
+    environment:
+      - NODE_ENV=production
+      - SITE_URL=https://secrets.${DOMAIN}
+      - ENCRYPTION_KEY=${INFISICAL_ENCRYPTION_KEY}
+      - AUTH_SECRET=${INFISICAL_AUTH_SECRET}
+      - DB_CONNECTION_URI=postgresql://infisical:${INFISICAL_DB_PASSWORD}@infisical-db:5432/infisical
+      - REDIS_URL=redis://infisical-redis:6379
+    depends_on:
+      - infisical-db
+      - infisical-redis
+    restart: unless-stopped
+    networks:
+      - internal
+
 networks:
   internal:
     driver: bridge

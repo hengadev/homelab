@@ -31,7 +31,10 @@ ANSIBLE_VARS = -e domain=$(DOMAIN) \
                -e woodpecker_admin=$(WOODPECKER_ADMIN) \
                -e woodpecker_github_client=$(WOODPECKER_GITHUB_CLIENT) \
                -e woodpecker_github_secret=$(WOODPECKER_GITHUB_SECRET) \
-               -e woodpecker_agent_secret=$(WOODPECKER_AGENT_SECRET)
+               -e woodpecker_agent_secret=$(WOODPECKER_AGENT_SECRET) \
+               -e infisical_db_password=$(INFISICAL_DB_PASSWORD) \
+               -e infisical_encryption_key=$(INFISICAL_ENCRYPTION_KEY) \
+               -e infisical_auth_secret=$(INFISICAL_AUTH_SECRET)
 
 # SSH_PUBLIC_KEY contains spaces so it must be passed via a vars file, not -e
 ANSIBLE_SSH_VARS_FILE := /tmp/homelab_ssh_vars.yml

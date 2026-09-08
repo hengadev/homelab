@@ -59,6 +59,22 @@
         group: deploy
         mode: "0755"
 
+    - name: Create infisical-db data directory
+      ansible.builtin.file:
+        path: /opt/homelab/data/infisical-db
+        state: directory
+        owner: deploy
+        group: deploy
+        mode: "0750"
+
+    - name: Create infisical-redis data directory
+      ansible.builtin.file:
+        path: /opt/homelab/data/infisical-redis
+        state: directory
+        owner: deploy
+        group: deploy
+        mode: "0750"
+
     # =========================================================================
     # Vaultwarden restore (skipped when data directory already has content)
     # =========================================================================
