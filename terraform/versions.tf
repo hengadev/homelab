@@ -16,12 +16,11 @@ terraform {
     }
   }
 
-  # Uncomment to use remote state with S3 backend
-  # backend "s3" {
-  #   bucket         = "homelab-terraform-state"
-  #   key            = "homelab/terraform.tfstate"
-  #   region         = "us-east-1"
-  #   encrypt        = true
-  #   dynamodb_table = "homelab-terraform-lock"
-  # }
+  backend "s3" {
+    bucket         = "henga-homelab-terraform-state"
+    key            = "homelab/terraform.tfstate"
+    region         = "us-east-1"
+    encrypt        = true
+    dynamodb_table = "homelab-terraform-lock"
+  }
 }
