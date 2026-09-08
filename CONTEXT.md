@@ -48,6 +48,23 @@ enabled. A dedicated IAM user scoped to the backup bucket handles credentials.
 On a fresh deploy, Ansible auto-restores the latest backup from S3 if the
 Vaultwarden data directory is empty.
 
+### Infisical
+Self-hosted secrets manager at `secrets.henga.dev` (image `infisical/infisical:latest`).
+Backed by its own Postgres (`infisical-db`) and Redis with AOF persistence
+(`infisical-redis`), both internal-only. Data lives at
+`/opt/homelab/data/infisical-db` and `/opt/homelab/data/infisical-redis`.
+
+**Bootstrap (manual, one-time, after first `make deploy`):** visit
+`https://secrets.henga.dev` and create the first admin account through the
+UI — Infisical has no non-interactive first-admin API, so this can't be
+automated by Ansible (same constraint as Vaultwarden's admin panel and
+Woodpecker's OAuth app setup). Once an org exists, create a Machine Identity
+(Settings → Machine Identities) scoped to whichever projects other homelab
+services need to read secrets from, using Universal Auth. Store the
+resulting client ID/secret wherever the consuming service's own secrets
+live — nothing in this repo consumes Infisical secrets yet, so there's no
+integration to wire up until a specific service needs one.
+
 ### Deploy
 The full service deployment cycle, triggered by `make deploy` or automatically
 by GitHub Actions on push to `main`. Runs the Ansible `deploy.yml` playbook,
@@ -93,7 +110,10 @@ containers.
 | `homelab-portfolio` | `henga/portfolio:latest` | `henga.dev` | none |
 | `homelab-anki` | `ankicommunity/anki-sync-server:latest` | `anki.henga.dev` | `/opt/homelab/data/anki` |
 | `homelab-anki-api` | local build (`docker/anki-api/`) | `anki-api.henga.dev` | `/opt/homelab/data/anki` (shared with anki) |
-| `homelab-backup` | `alpine:3.19` | — (internal cron) | reads Vaultwarden and Anki data read-only |
+| `homelab-backup` | `alpine:3.19` | — (internal cron) | reads Vaultwarden and Anki data read-only, dumps Infisical's Postgres |
+| `homelab-infisical` | `infisical/infisical:latest` | `secrets.henga.dev` | none (state lives in infisical-db/infisical-redis) |
+| `homelab-infisical-db` | `postgres:14-alpine` | — (internal) | `/opt/homelab/data/infisical-db` |
+| `homelab-infisical-redis` | `redis:7-alpine` (AOF) | — (internal) | `/opt/homelab/data/infisical-redis` |
 
 ---
 
