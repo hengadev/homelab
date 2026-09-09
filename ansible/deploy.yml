@@ -148,6 +148,152 @@
             - "/tmp/{{ latest_backup.stdout | trim | regex_replace('\\.gpg$', '') }}"
           when: latest_backup.stdout | trim != ""
 
+    # =========================================================================
+    # Anki restore (skipped when data directory already has content)
+    # =========================================================================
+    - name: Check if Anki data directory is empty
+      ansible.builtin.find:
+        paths: /opt/homelab/data/anki
+      register: anki_data_contents
+
+    - name: Restore Anki from S3 backup
+      when: anki_data_contents.matched == 0
+      block:
+        - name: Find latest Anki backup in S3
+          ansible.builtin.shell:
+            cmd: >
+              aws s3 ls s3://{{ backup_s3_bucket }}/
+              | grep 'anki_'
+              | awk '{print $4}'
+              | sort
+              | tail -1
+          environment:
+            AWS_ACCESS_KEY_ID: "{{ backup_aws_access_key_id }}"
+            AWS_SECRET_ACCESS_KEY: "{{ backup_aws_secret_access_key }}"
+            AWS_DEFAULT_REGION: "{{ aws_default_region }}"
+          register: latest_anki_backup
+          changed_when: false
+
+        - name: Log notice when no backup found in S3
+          ansible.builtin.debug:
+            msg: "No Anki backup found in S3, starting fresh"
+          when: latest_anki_backup.stdout | trim == ""
+
+        - name: Download latest Anki backup from S3
+          ansible.builtin.command:
+            cmd: >
+              aws s3 cp
+              s3://{{ backup_s3_bucket }}/{{ latest_anki_backup.stdout | trim }}
+              /tmp/{{ latest_anki_backup.stdout | trim }}
+          environment:
+            AWS_ACCESS_KEY_ID: "{{ backup_aws_access_key_id }}"
+            AWS_SECRET_ACCESS_KEY: "{{ backup_aws_secret_access_key }}"
+            AWS_DEFAULT_REGION: "{{ aws_default_region }}"
+          when: latest_anki_backup.stdout | trim != ""
+          changed_when: true
+
+        - name: Decrypt Anki backup
+          ansible.builtin.shell:
+            cmd: >
+              echo "{{ backup_passphrase }}" |
+              gpg --batch --yes --passphrase-fd 0
+              --decrypt
+              --output /tmp/{{ latest_anki_backup.stdout | trim | regex_replace('\.gpg$', '') }}
+              /tmp/{{ latest_anki_backup.stdout | trim }}
+          when: latest_anki_backup.stdout | trim != ""
+          no_log: true
+          changed_when: true
+
+        - name: Extract Anki backup to data directory
+          ansible.builtin.command:
+            cmd: >
+              tar -xzf /tmp/{{ latest_anki_backup.stdout | trim | regex_replace('\.gpg$', '') }}
+              -C /opt/homelab/data/anki
+          when: latest_anki_backup.stdout | trim != ""
+          changed_when: true
+
+        - name: Remove temporary backup files
+          ansible.builtin.file:
+            path: "{{ item }}"
+            state: absent
+          loop:
+            - "/tmp/{{ latest_anki_backup.stdout | trim }}"
+            - "/tmp/{{ latest_anki_backup.stdout | trim | regex_replace('\\.gpg$', '') }}"
+          when: latest_anki_backup.stdout | trim != ""
+
+    # =========================================================================
+    # Woodpecker restore (skipped when data directory already has content)
+    # =========================================================================
+    - name: Check if Woodpecker data directory is empty
+      ansible.builtin.find:
+        paths: /opt/homelab/data/woodpecker
+      register: woodpecker_data_contents
+
+    - name: Restore Woodpecker from S3 backup
+      when: woodpecker_data_contents.matched == 0
+      block:
+        - name: Find latest Woodpecker backup in S3
+          ansible.builtin.shell:
+            cmd: >
+              aws s3 ls s3://{{ backup_s3_bucket }}/
+              | grep 'woodpecker_'
+              | awk '{print $4}'
+              | sort
+              | tail -1
+          environment:
+            AWS_ACCESS_KEY_ID: "{{ backup_aws_access_key_id }}"
+            AWS_SECRET_ACCESS_KEY: "{{ backup_aws_secret_access_key }}"
+            AWS_DEFAULT_REGION: "{{ aws_default_region }}"
+          register: latest_woodpecker_backup
+          changed_when: false
+
+        - name: Log notice when no backup found in S3
+          ansible.builtin.debug:
+            msg: "No Woodpecker backup found in S3, starting fresh"
+          when: latest_woodpecker_backup.stdout | trim == ""
+
+        - name: Download latest Woodpecker backup from S3
+          ansible.builtin.command:
+            cmd: >
+              aws s3 cp
+              s3://{{ backup_s3_bucket }}/{{ latest_woodpecker_backup.stdout | trim }}
+              /tmp/{{ latest_woodpecker_backup.stdout | trim }}
+          environment:
+            AWS_ACCESS_KEY_ID: "{{ backup_aws_access_key_id }}"
+            AWS_SECRET_ACCESS_KEY: "{{ backup_aws_secret_access_key }}"
+            AWS_DEFAULT_REGION: "{{ aws_default_region }}"
+          when: latest_woodpecker_backup.stdout | trim != ""
+          changed_when: true
+
+        - name: Decrypt Woodpecker backup
+          ansible.builtin.shell:
+            cmd: >
+              echo "{{ backup_passphrase }}" |
+              gpg --batch --yes --passphrase-fd 0
+              --decrypt
+              --output /tmp/{{ latest_woodpecker_backup.stdout | trim | regex_replace('\.gpg$', '') }}
+              /tmp/{{ latest_woodpecker_backup.stdout | trim }}
+          when: latest_woodpecker_backup.stdout | trim != ""
+          no_log: true
+          changed_when: true
+
+        - name: Extract Woodpecker backup to data directory
+          ansible.builtin.command:
+            cmd: >
+              tar -xzf /tmp/{{ latest_woodpecker_backup.stdout | trim | regex_replace('\.gpg$', '') }}
+              -C /opt/homelab/data/woodpecker
+          when: latest_woodpecker_backup.stdout | trim != ""
+          changed_when: true
+
+        - name: Remove temporary backup files
+          ansible.builtin.file:
+            path: "{{ item }}"
+            state: absent
+          loop:
+            - "/tmp/{{ latest_woodpecker_backup.stdout | trim }}"
+            - "/tmp/{{ latest_woodpecker_backup.stdout | trim | regex_replace('\\.gpg$', '') }}"
+          when: latest_woodpecker_backup.stdout | trim != ""
+
     - name: Copy docker-compose.yml to server
       ansible.builtin.copy:
         src: ../docker/docker-compose.yml
@@ -217,6 +363,104 @@
         owner: deploy
         group: deploy
         mode: "0600"
+
+    # =========================================================================
+    # Infisical Postgres restore (skipped when the DB data directory already
+    # has content). Unlike the tar-based restores above, this needs
+    # infisical-db actually running and accepting connections before the SQL
+    # dump can be piped into it, so it starts that one container early,
+    # restores into it, then lets the normal "docker compose up -d" below
+    # bring up the rest of the stack (including infisical-db again, which is
+    # a no-op since it's already running).
+    # =========================================================================
+    - name: Check if Infisical Postgres data directory is empty
+      ansible.builtin.find:
+        paths: /opt/homelab/data/infisical-db
+      register: infisical_data_contents
+
+    - name: Restore Infisical Postgres from S3 backup
+      when: infisical_data_contents.matched == 0
+      block:
+        - name: Find latest Infisical backup in S3
+          ansible.builtin.shell:
+            cmd: >
+              aws s3 ls s3://{{ backup_s3_bucket }}/
+              | grep 'infisical_'
+              | awk '{print $4}'
+              | sort
+              | tail -1
+          environment:
+            AWS_ACCESS_KEY_ID: "{{ backup_aws_access_key_id }}"
+            AWS_SECRET_ACCESS_KEY: "{{ backup_aws_secret_access_key }}"
+            AWS_DEFAULT_REGION: "{{ aws_default_region }}"
+          register: latest_infisical_backup
+          changed_when: false
+
+        - name: Log notice when no backup found in S3
+          ansible.builtin.debug:
+            msg: "No Infisical backup found in S3, starting fresh (Infisical will initialize an empty schema on first boot)"
+          when: latest_infisical_backup.stdout | trim == ""
+
+        - name: Start Infisical Postgres so it can accept the restore
+          ansible.builtin.command:
+            cmd: docker compose up -d infisical-db
+            chdir: /opt/homelab
+          when: latest_infisical_backup.stdout | trim != ""
+          changed_when: true
+
+        - name: Wait for Infisical Postgres to accept connections
+          ansible.builtin.command:
+            cmd: docker compose exec -T infisical-db pg_isready -U infisical -d infisical
+            chdir: /opt/homelab
+          register: infisical_pg_ready
+          until: infisical_pg_ready.rc == 0
+          retries: 10
+          delay: 3
+          when: latest_infisical_backup.stdout | trim != ""
+          changed_when: false
+
+        - name: Download latest Infisical backup from S3
+          ansible.builtin.command:
+            cmd: >
+              aws s3 cp
+              s3://{{ backup_s3_bucket }}/{{ latest_infisical_backup.stdout | trim }}
+              /tmp/{{ latest_infisical_backup.stdout | trim }}
+          environment:
+            AWS_ACCESS_KEY_ID: "{{ backup_aws_access_key_id }}"
+            AWS_SECRET_ACCESS_KEY: "{{ backup_aws_secret_access_key }}"
+            AWS_DEFAULT_REGION: "{{ aws_default_region }}"
+          when: latest_infisical_backup.stdout | trim != ""
+          changed_when: true
+
+        - name: Decrypt Infisical backup
+          ansible.builtin.shell:
+            cmd: >
+              echo "{{ backup_passphrase }}" |
+              gpg --batch --yes --passphrase-fd 0
+              --decrypt
+              --output /tmp/{{ latest_infisical_backup.stdout | trim | regex_replace('\.gpg$', '') }}
+              /tmp/{{ latest_infisical_backup.stdout | trim }}
+          when: latest_infisical_backup.stdout | trim != ""
+          no_log: true
+          changed_when: true
+
+        - name: Restore Infisical Postgres dump
+          ansible.builtin.shell:
+            cmd: >
+              zcat /tmp/{{ latest_infisical_backup.stdout | trim | regex_replace('\.gpg$', '') }}
+              | docker compose exec -T infisical-db psql -U infisical -d infisical
+            chdir: /opt/homelab
+          when: latest_infisical_backup.stdout | trim != ""
+          changed_when: true
+
+        - name: Remove temporary backup files
+          ansible.builtin.file:
+            path: "{{ item }}"
+            state: absent
+          loop:
+            - "/tmp/{{ latest_infisical_backup.stdout | trim }}"
+            - "/tmp/{{ latest_infisical_backup.stdout | trim | regex_replace('\\.gpg$', '') }}"
+          when: latest_infisical_backup.stdout | trim != ""
 
     - name: Pull latest Docker images
       ansible.builtin.command:
