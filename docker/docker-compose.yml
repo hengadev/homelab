@@ -77,6 +77,7 @@ services:
     volumes:
       - /opt/homelab/data/vaultwarden:/data:ro
       - /opt/homelab/data/anki:/anki-data:ro
+      - /opt/homelab/data/woodpecker:/woodpecker-data:ro
       - ./backup.sh:/backup.sh:ro
     environment:
       # Map dedicated backup IAM credentials to standard AWS env vars inside the container
