@@ -50,8 +50,9 @@ anki-api.{$DOMAIN} {
 }
 
 vault.{$DOMAIN} {
-    # WebSocket endpoint for real-time sync (CRITICAL)
-    reverse_proxy /notifications/hub vaultwarden:3012
+    # Since Vaultwarden 1.31.0, WebSocket notifications (/notifications/hub)
+    # are served on the main HTTP port, not a separate 3012 — reverse_proxy
+    # upgrades to WebSocket automatically on Connection/Upgrade headers.
     reverse_proxy vaultwarden:80
     header {
         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"

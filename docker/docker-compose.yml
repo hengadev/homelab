@@ -27,7 +27,6 @@ services:
       - .env
     environment:
       - DOMAIN=https://vault.${DOMAIN}
-      - WEBSOCKET_ENABLED=true
       - SIGNUPS_ALLOWED=false
     restart: unless-stopped
     networks:
