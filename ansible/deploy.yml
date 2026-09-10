@@ -81,6 +81,7 @@
     - name: Check if Vaultwarden data directory is empty
       ansible.builtin.find:
         paths: /opt/homelab/data/vaultwarden
+        file_type: any
       register: vaultwarden_data_contents
 
     - name: Restore Vaultwarden from S3 backup
@@ -154,6 +155,7 @@
     - name: Check if Anki data directory is empty
       ansible.builtin.find:
         paths: /opt/homelab/data/anki
+        file_type: any
       register: anki_data_contents
 
     - name: Restore Anki from S3 backup
@@ -227,6 +229,7 @@
     - name: Check if Woodpecker data directory is empty
       ansible.builtin.find:
         paths: /opt/homelab/data/woodpecker
+        file_type: any
       register: woodpecker_data_contents
 
     - name: Restore Woodpecker from S3 backup
@@ -376,6 +379,7 @@
     - name: Check if Infisical Postgres data directory is empty
       ansible.builtin.find:
         paths: /opt/homelab/data/infisical-db
+        file_type: any
       register: infisical_data_contents
 
     - name: Restore Infisical Postgres from S3 backup
