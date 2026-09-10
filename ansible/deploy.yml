@@ -59,21 +59,22 @@
         group: deploy
         mode: "0755"
 
+    # No owner/group/mode here on purpose: infisical-db (postgres) and
+    # infisical-redis (redis) both chown their PGDATA/data dir to their own
+    # container uid on every container start. Asserting deploy:deploy here
+    # unconditionally on every playbook run fights that and silently breaks
+    # the running container without restarting it (permission-denied errors
+    # with no container restart) - bit us in production on 2026-09-10. Just
+    # ensure the directory exists; let each container manage ownership.
     - name: Create infisical-db data directory
       ansible.builtin.file:
         path: /opt/homelab/data/infisical-db
         state: directory
-        owner: deploy
-        group: deploy
-        mode: "0750"
 
     - name: Create infisical-redis data directory
       ansible.builtin.file:
         path: /opt/homelab/data/infisical-redis
         state: directory
-        owner: deploy
-        group: deploy
-        mode: "0750"
 
     # =========================================================================
     # Vaultwarden restore (skipped when data directory already has content)
