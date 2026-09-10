@@ -15,8 +15,8 @@ Production-ready, fully reproducible homelab infrastructure deployed with a sing
        ↓                ↓               ↓             ↓              ↓               ↓
  ┌───────────┐   ┌───────────┐   ┌───────────┐  ┌───────────┐ ┌───────────┐   ┌───────────┐
  │Vaultwarden│   │ Portfolio │   │   Anki    │  │ Anki API  │ │   Demos   │   │  Backup   │
- │(Passwords)│   │ (Website) │   │  (Sync)   │  │  (HTTP)   │ │(Leviosa,  │   │   (S3)    │
- │           │   │           │   │           │  │           │ │ Germinal) │   │           │
+ │(Passwords)│   │ (Website) │   │  (Sync)   │  │  (HTTP)   │ │(Leviosa)  │   │   (S3)    │
+ │           │   │           │   │           │  │           │ │           │   │           │
  └───────────┘   └───────────┘   └───────────┘  └───────────┘ └───────────┘   └───────────┘
 ```
 
@@ -28,7 +28,7 @@ Production-ready, fully reproducible homelab infrastructure deployed with a sing
 - **Portfolio**: Personal portfolio website
 - **Vaultwarden**: Self-hosted password manager
 - **Anki sync server + Anki API**: Self-hosted Anki sync server, plus a small authenticated HTTP API (`anki-api`) for managing decks/cards programmatically (used for spaced-repetition flashcards)
-- **Demo apps**: `leviosa-demo` and `germinal-demo` — live demo deployments (with mock data) of client portfolio projects, used to showcase the work to prospective clients without exposing real client data
+- **Demo apps**: `leviosa-demo` — live demo deployment (with mock data) of a client portfolio project, used to showcase the work to prospective clients without exposing real client data
 - **Backup**: Encrypted nightly backups of Vaultwarden + Anki data to S3
 
 ## Prerequisites
@@ -68,7 +68,6 @@ Production-ready, fully reproducible homelab infrastructure deployed with a sing
    - Anki sync server: `https://anki.yourdomain.com`
    - Anki API: `https://anki-api.yourdomain.com`
    - Leviosa demo: `https://leviosa.yourdomain.com`
-   - Germinal demo: `https://germinal.yourdomain.com`
 
 ## Environment Variables
 
@@ -90,7 +89,7 @@ Production-ready, fully reproducible homelab infrastructure deployed with a sing
 | `GITHUB_USERNAME` | For portfolio image reference | `yourusername` |
 | `ANKI_USERNAME` / `ANKI_PASSWORD` | Credentials for the Anki sync server (used by Anki desktop/mobile clients) | — |
 | `ANKI_API_KEY` | API key required by the `anki-api` container (`X-API-Key` header) | — |
-| `LEVIOSA_DEMO_*` / `GERMINAL_DEMO_*` | Mock admin/staff/partner/client credentials for the demo apps | — |
+| `LEVIOSA_DEMO_*` | Mock admin/partner/client credentials for the demo app | — |
 
 ## Day-2 Operations
 
@@ -101,7 +100,7 @@ make update           # Pull and restart all homelab services
 make deploy-portfolio # Build, push, and restart the portfolio container
 make reload-portfolio # Pull latest portfolio image and restart (skip build)
 make rebuild-anki-api # Rebuild and restart the anki-api container
-make deploy-demos     # Pull latest demo images and restart leviosa-demo/germinal-demo
+make deploy-demos     # Pull latest demo image and restart leviosa-demo
 ```
 
 ### Manual backup

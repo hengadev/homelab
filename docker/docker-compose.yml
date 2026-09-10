@@ -116,21 +116,6 @@ services:
     networks:
       - internal
 
-  germinal-demo:
-    image: henga/germinal:latest
-    container_name: homelab-germinal-demo
-    environment:
-      - USE_MOCK_DATA=true
-      - NODE_ENV=production
-      - PORT=3001
-      - MOCK_ADMIN_EMAIL=${GERMINAL_DEMO_ADMIN_EMAIL}
-      - MOCK_ADMIN_PASSWORD=${GERMINAL_DEMO_ADMIN_PASSWORD}
-      - MOCK_STAFF_EMAIL=${GERMINAL_DEMO_STAFF_EMAIL}
-      - MOCK_STAFF_PASSWORD=${GERMINAL_DEMO_STAFF_PASSWORD}
-    restart: unless-stopped
-    networks:
-      - internal
-
   woodpecker-server:
     image: woodpeckerci/woodpecker-server:v3
     container_name: homelab-woodpecker-server

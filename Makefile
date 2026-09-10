@@ -24,10 +24,6 @@ ANSIBLE_VARS = -e domain=$(DOMAIN) \
                -e leviosa_demo_partner_password=$(LEVIOSA_DEMO_PARTNER_PASSWORD) \
                -e leviosa_demo_client_email=$(LEVIOSA_DEMO_CLIENT_EMAIL) \
                -e leviosa_demo_client_password=$(LEVIOSA_DEMO_CLIENT_PASSWORD) \
-               -e germinal_demo_admin_email=$(GERMINAL_DEMO_ADMIN_EMAIL) \
-               -e germinal_demo_admin_password=$(GERMINAL_DEMO_ADMIN_PASSWORD) \
-               -e germinal_demo_staff_email=$(GERMINAL_DEMO_STAFF_EMAIL) \
-               -e germinal_demo_staff_password=$(GERMINAL_DEMO_STAFF_PASSWORD) \
                -e woodpecker_admin=$(WOODPECKER_ADMIN) \
                -e woodpecker_github_client=$(WOODPECKER_GITHUB_CLIENT) \
                -e woodpecker_github_secret=$(WOODPECKER_GITHUB_SECRET) \
@@ -124,7 +120,7 @@ logs: ## View Docker logs
 rebuild-anki-api: ## Rebuild and restart the anki-api container on the server
 	@ssh -i $(SSH_PRIVATE_KEY_PATH) deploy@$(SERVER_IP) "cd /opt/homelab && docker compose build anki-api && docker compose up -d --no-deps anki-api"
 
-deploy-demos: ## Pull latest demo images and restart leviosa-demo and germinal-demo
+deploy-demos: ## Pull latest demo images and restart leviosa-demo
 	@scp -i $(SSH_PRIVATE_KEY_PATH) docker/docker-compose.yml deploy@$(SERVER_IP):/opt/homelab/docker-compose.yml
 	@scp -i $(SSH_PRIVATE_KEY_PATH) docker/Caddyfile deploy@$(SERVER_IP):/opt/homelab/Caddyfile
-	@ssh -i $(SSH_PRIVATE_KEY_PATH) deploy@$(SERVER_IP) "cd /opt/homelab && docker compose pull leviosa-demo germinal-demo && docker compose up -d --no-deps leviosa-demo germinal-demo && docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile"
+	@ssh -i $(SSH_PRIVATE_KEY_PATH) deploy@$(SERVER_IP) "cd /opt/homelab && docker compose pull leviosa-demo && docker compose up -d --no-deps leviosa-demo && docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile"
