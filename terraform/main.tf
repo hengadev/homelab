@@ -51,18 +51,14 @@ resource "hcloud_firewall" "homelab" {
   }
 }
 
-# Server with cloud-init to create deploy user
-resource "hcloud_server" "homelab" {
-  name        = "homelab-01"
-  server_type = var.server_type
-  location    = var.server_location
-  image       = var.server_image
-  ssh_keys    = [hcloud_ssh_key.homelab.id]
-  firewall_ids = [hcloud_firewall.homelab.id]
-  labels      = { homelab = "true" }
-
-  # cloud-init creates deploy user with passwordless sudo
-  user_data = <<-EOT
+# cloud-init creates deploy user with passwordless sudo. Kept as a local
+# (rather than inline in each resource) so the temporary migration server
+# below can share byte-for-byte identical user_data — the Hetzner API only
+# ever returns a SHA1 hash of user_data on read-back, never the raw content,
+# so referencing hcloud_server.homelab.user_data directly silently passes
+# that hash as the new server's cloud-init instead of the real config.
+locals {
+  deploy_user_cloud_init = <<-EOT
   #cloud-config
   users:
     - name: deploy
@@ -71,6 +67,18 @@ resource "hcloud_server" "homelab" {
       ssh_authorized_keys:
         - ${var.ssh_public_key}
   EOT
+}
+
+# Server with cloud-init to create deploy user
+resource "hcloud_server" "homelab" {
+  name        = "homelab-02"
+  server_type = var.server_type
+  location    = var.server_location
+  image       = var.server_image
+  ssh_keys    = [hcloud_ssh_key.homelab.id]
+  firewall_ids = [hcloud_firewall.homelab.id]
+  labels      = { homelab = "true" }
+  user_data   = local.deploy_user_cloud_init
 }
 
 # S3 bucket for Vaultwarden backups
