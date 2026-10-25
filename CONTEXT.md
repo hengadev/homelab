@@ -99,6 +99,7 @@ containers.
 - OS: Ubuntu 22.04
 - IP: `167.235.192.246` (since the cx23 migration; `49.12.79.39` was the old server)
 - Access user: `deploy` (passwordless sudo, SSH key auth)
+- Swap: 2 GB `/swapfile`, swappiness 10 (`setup.yml`), a safety net for the 4 GB of RAM
 
 ### Domain
 - `henga.dev` — managed in Cloudflare, Terraform-provisioned DNS records

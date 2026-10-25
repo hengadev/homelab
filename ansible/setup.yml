@@ -116,6 +116,53 @@
         groups: docker
         append: true
 
+    # =========================================================================
+    # Swap: a safety net, not working memory. The box has 4 GB and runs
+    # Woodpecker builds next to the observability stack; without swap a
+    # spike gets a container OOM-killed. Same path and size as the swap file
+    # first created by hand, so this is a no-op on the current server.
+    # =========================================================================
+    - name: Create the swap file
+      ansible.builtin.command:
+        cmd: fallocate -l 2G /swapfile
+        creates: /swapfile
+      register: swapfile_created
+
+    - name: Restrict the swap file to root
+      ansible.builtin.file:
+        path: /swapfile
+        owner: root
+        group: root
+        mode: "0600"
+
+    - name: Format the swap file
+      ansible.builtin.command:
+        cmd: mkswap /swapfile
+      when: swapfile_created.changed
+
+    - name: Check whether the swap file is active
+      ansible.builtin.command:
+        cmd: swapon --show=NAME --noheadings
+      register: active_swap
+      changed_when: false
+
+    - name: Enable the swap file
+      ansible.builtin.command:
+        cmd: swapon /swapfile
+      when: "'/swapfile' not in active_swap.stdout_lines"
+
+    - name: Enable the swap file at boot
+      ansible.builtin.lineinfile:
+        path: /etc/fstab
+        line: /swapfile none swap sw 0 0
+
+    # Only swap when RAM is nearly exhausted
+    - name: Lower swappiness
+      ansible.posix.sysctl:
+        name: vm.swappiness
+        value: "10"
+        sysctl_file: /etc/sysctl.d/99-swap.conf
+
     - name: Install fail2ban
       ansible.builtin.apt:
         name: fail2ban
