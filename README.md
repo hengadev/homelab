@@ -68,6 +68,8 @@ Production-ready, fully reproducible homelab infrastructure deployed with a sing
    - Anki sync server: `https://anki.yourdomain.com`
    - Anki API: `https://anki-api.yourdomain.com`
    - Leviosa demo: `https://leviosa.yourdomain.com`
+   - Grafana (dashboards, alerts): `https://grafana.yourdomain.com`
+   - Metrics/logs push endpoint (agents only): `https://ingest.yourdomain.com`
 
 ## Environment Variables
 
@@ -90,6 +92,9 @@ Production-ready, fully reproducible homelab infrastructure deployed with a sing
 | `ANKI_USERNAME` / `ANKI_PASSWORD` | Credentials for the Anki sync server (used by Anki desktop/mobile clients) | — |
 | `ANKI_API_KEY` | API key required by the `anki-api` container (`X-API-Key` header) | — |
 | `LEVIOSA_DEMO_*` | Mock admin/partner/client credentials for the demo app | — |
+| `GRAFANA_ADMIN_PASSWORD` | Grafana `admin` login | `openssl rand -hex 24` |
+| `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` | Where Grafana sends alerts (bot from @BotFather) | — |
+| `INGEST_TOKEN` | Bearer token remote agents push metrics/logs with; hex only | `openssl rand -hex 32` |
 
 ## Day-2 Operations
 

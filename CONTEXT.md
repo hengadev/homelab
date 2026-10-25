@@ -75,6 +75,27 @@ resulting client ID/secret wherever the consuming service's own secrets
 live — nothing in this repo consumes Infisical secrets yet, so there's no
 integration to wire up until a specific service needs one.
 
+### Observability
+Monitoring for apps hosted elsewhere, starting with Germinal
+(`germinalstudio.co`, its own Hetzner VPS). Remote servers **push**: an
+Alloy agent on each sends metrics and logs to `ingest.henga.dev` with a
+bearer token (`INGEST_TOKEN`). Caddy checks the token, then routes
+`/api/v1/write` to VictoriaMetrics and `/loki/api/v1/push` to Loki. The
+agent strips URL tokens and visitor IPs from logs before they leave the
+remote server.
+
+- **VictoriaMetrics**: metrics, 30 days. It also scrapes the **blackbox
+  exporter**, which checks Germinal's `/api/health` (prod and staging) from
+  outside, through Cloudflare, every 30 s.
+- **Loki**: logs, 30 days.
+- **Grafana** at `grafana.henga.dev`: dashboards, alert rules and the
+  Telegram contact point, all provisioned from
+  `docker/observability/grafana/`. UI edits to provisioned items are refused:
+  change the files and redeploy. Login `admin` / `GRAFANA_ADMIN_PASSWORD`.
+
+Metrics, logs and Grafana state are named volumes and are **not** backed
+up: they can be rebuilt, or the config is in this repo.
+
 ### Deploy
 The full service deployment cycle, triggered by `make deploy` or automatically
 by GitHub Actions on push to `main`. Runs the Ansible `deploy.yml` playbook,
@@ -125,6 +146,10 @@ containers.
 | `homelab-infisical` | `infisical/infisical:latest` | `secrets.henga.dev` | none (state lives in infisical-db/infisical-redis) |
 | `homelab-infisical-db` | `postgres:14-alpine` | — (internal) | `/opt/homelab/data/infisical-db` |
 | `homelab-infisical-redis` | `redis:7-alpine` (AOF) | — (internal) | `/opt/homelab/data/infisical-redis` |
+| `homelab-victoriametrics` | `victoriametrics/victoria-metrics` | via `ingest.henga.dev` (push) | `victoriametrics_data` volume (not backed up) |
+| `homelab-blackbox-exporter` | `prom/blackbox-exporter` | — (internal) | none |
+| `homelab-loki` | `grafana/loki` | via `ingest.henga.dev` (push) | `loki_data` volume (not backed up) |
+| `homelab-grafana` | `grafana/grafana` | `grafana.henga.dev` | `grafana_data` volume (config provisioned from the repo) |
 
 ---
 

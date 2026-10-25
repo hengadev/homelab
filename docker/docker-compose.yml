@@ -195,6 +195,82 @@ services:
     networks:
       - internal
 
+  # ===========================================================================
+  # Observability: metrics, logs and alerts (grafana.henga.dev). The
+  # Germinal VPS pushes to ingest.henga.dev.
+  # ===========================================================================
+  # Every service here has a mem_limit (~2 GB in total, ~850 MB used when
+  # idle): the box has 4 GB (swap is only a safety net) and runs Woodpecker
+  # builds, so a Loki or Grafana spike must not get Vaultwarden or Infisical
+  # OOM-killed.
+
+  victoriametrics:
+    image: victoriametrics/victoria-metrics:v1.154.1
+    container_name: homelab-victoriametrics
+    mem_limit: 384m
+    command:
+      - -storageDataPath=/storage
+      - -retentionPeriod=30d
+      - -promscrape.config=/etc/victoriametrics/scrape.yml
+    volumes:
+      - victoriametrics_data:/storage
+      - ./observability/victoriametrics/scrape.yml:/etc/victoriametrics/scrape.yml:ro
+    restart: unless-stopped
+    networks:
+      - internal
+
+  blackbox-exporter:
+    image: prom/blackbox-exporter:v0.29.1
+    container_name: homelab-blackbox-exporter
+    mem_limit: 64m
+    volumes:
+      - ./observability/blackbox/blackbox.yml:/etc/blackbox_exporter/config.yml:ro
+    restart: unless-stopped
+    networks:
+      - internal
+
+  loki:
+    image: grafana/loki:3.7.9
+    container_name: homelab-loki
+    mem_limit: 384m
+    command: -config.file=/etc/loki/config.yml
+    volumes:
+      - loki_data:/loki
+      - ./observability/loki/config.yml:/etc/loki/config.yml:ro
+    restart: unless-stopped
+    networks:
+      - internal
+
+  grafana:
+    image: grafana/grafana:13.2.4
+    container_name: homelab-grafana
+    mem_limit: 384m
+    environment:
+      - GF_SERVER_ROOT_URL=https://grafana.${DOMAIN}
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      - GF_SECURITY_COOKIE_SECURE=true
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+      - GF_ANALYTICS_CHECK_FOR_UPDATES=false
+      - GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES=false
+      - GF_NEWS_NEWS_FEED_ENABLED=false
+      # Read by provisioning/alerting/alerting.yml
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana-dashboards:ro
+    depends_on:
+      - victoriametrics
+      - loki
+    restart: unless-stopped
+    networks:
+      - internal
+
+
 networks:
   internal:
     driver: bridge
@@ -205,4 +281,12 @@ volumes:
   caddy_data:
     driver: local
   caddy_config:
+    driver: local
+  # Metrics, logs and Grafana state are disposable or provisioned from this
+  # repo: named volumes, no backup.
+  victoriametrics_data:
+    driver: local
+  loki_data:
+    driver: local
+  grafana_data:
     driver: local

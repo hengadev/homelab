@@ -30,7 +30,11 @@ ANSIBLE_VARS = -e domain=$(DOMAIN) \
                -e woodpecker_agent_secret=$(WOODPECKER_AGENT_SECRET) \
                -e infisical_db_password=$(INFISICAL_DB_PASSWORD) \
                -e infisical_encryption_key=$(INFISICAL_ENCRYPTION_KEY) \
-               -e infisical_auth_secret=$(INFISICAL_AUTH_SECRET)
+               -e infisical_auth_secret=$(INFISICAL_AUTH_SECRET) \
+               -e grafana_admin_password=$(GRAFANA_ADMIN_PASSWORD) \
+               -e telegram_bot_token=$(TELEGRAM_BOT_TOKEN) \
+               -e telegram_chat_id=$(TELEGRAM_CHAT_ID) \
+               -e ingest_token=$(INGEST_TOKEN)
 
 # SSH_PUBLIC_KEY contains spaces so it must be passed via a vars file, not -e
 ANSIBLE_SSH_VARS_FILE := /tmp/homelab_ssh_vars.yml

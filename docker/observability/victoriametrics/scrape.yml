@@ -1,0 +1,29 @@
+# VictoriaMetrics' own scrape jobs. Everything else arrives by remote write
+# through ingest.henga.dev (the Germinal VPS pushes: its firewall only lets
+# Cloudflare in, so nothing here could scrape it).
+global:
+  scrape_interval: 30s
+
+scrape_configs:
+  # Outside-in checks: what a visitor sees, through Cloudflare. 200 is
+  # "healthy" or "degraded"; the app answers 503 when "unhealthy".
+  - job_name: blackbox
+    metrics_path: /probe
+    params:
+      module: [http_health]
+    static_configs:
+      - targets: [https://germinalstudio.co/api/health]
+        labels:
+          app: germinal
+          env: prod
+      - targets: [https://staging.germinalstudio.co/api/health]
+        labels:
+          app: germinal
+          env: staging
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115

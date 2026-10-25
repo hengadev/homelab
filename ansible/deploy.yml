@@ -342,6 +342,18 @@
         - { src: ../docker/anki-api/requirements.txt, dest: /opt/homelab/anki-api/requirements.txt }
         - { src: ../docker/anki-api/main.py, dest: /opt/homelab/anki-api/main.py }
 
+    # Config for VictoriaMetrics, Loki, the blackbox exporter and Grafana's
+    # provisioning (datasources, dashboards, alert rules, Telegram)
+    - name: Copy observability config to server
+      ansible.builtin.copy:
+        src: ../docker/observability/
+        dest: /opt/homelab/observability/
+        owner: deploy
+        group: deploy
+        mode: "0644"
+        directory_mode: "0755"
+      notify: Restart observability containers
+
     - name: Copy Caddyfile to server
       ansible.builtin.copy:
         src: ../docker/Caddyfile
@@ -483,6 +495,12 @@
     - name: Restart backup container
       ansible.builtin.command:
         cmd: docker compose restart vaultwarden-backup
+        chdir: /opt/homelab
+      changed_when: true
+
+    - name: Restart observability containers
+      ansible.builtin.command:
+        cmd: docker compose restart victoriametrics blackbox-exporter loki grafana
         chdir: /opt/homelab
       changed_when: true
 

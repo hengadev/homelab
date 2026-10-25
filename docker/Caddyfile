@@ -91,6 +91,37 @@ releases.{$DOMAIN} {
     }
 }
 
+grafana.{$DOMAIN} {
+    reverse_proxy grafana:3000
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy no-referrer
+    }
+}
+
+ingest.{$DOMAIN} {
+    # Push endpoint for remote agents (the Alloy agent on the Germinal VPS).
+    # INGEST_TOKEN is hex (openssl rand -hex 32), so it needs no escaping.
+    # `route` keeps this order: Caddy otherwise runs reverse_proxy before
+    # respond, which would skip the token check.
+    route {
+        @unauthorized not header Authorization "Bearer {$INGEST_TOKEN}"
+        respond @unauthorized 401
+        reverse_proxy /api/v1/write victoriametrics:8428
+        reverse_proxy /loki/api/v1/push loki:3100
+        respond 404
+    }
+    request_body {
+        max_size 20MB
+    }
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        -Server
+    }
+}
+
 secrets.{$DOMAIN} {
     # reverse_proxy upgrades to WebSocket automatically on Connection/Upgrade
     # headers, so no special handling is needed here.
