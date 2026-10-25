@@ -97,7 +97,7 @@ containers.
 - Provider: Hetzner Cloud
 - Type: `cx23`, location `fsn1` (Falkenstein, Germany)
 - OS: Ubuntu 22.04
-- IP: `49.12.79.39`
+- IP: `167.235.192.246` (since the cx23 migration; `49.12.79.39` was the old server)
 - Access user: `deploy` (passwordless sudo, SSH key auth)
 
 ### Domain
