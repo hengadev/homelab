@@ -721,7 +721,7 @@
     },
     {
       "type": "timeseries",
-      "title": "Database queries",
+      "title": "Requests in flight",
       "id": 16,
       "datasource": {
         "type": "prometheus",
@@ -740,17 +740,8 @@
             "type": "prometheus",
             "uid": "victoriametrics"
           },
-          "expr": "sum by (env) (rate(db_queries_total{job=\"germinal_app\"}[5m]))",
-          "legendFormat": "{{env}} queries/s"
-        },
-        {
-          "refId": "B",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "victoriametrics"
-          },
-          "expr": "sum by (env) (rate(db_slow_queries_total{job=\"germinal_app\"}[5m]))",
-          "legendFormat": "{{env}} slow/s"
+          "expr": "sum by (env) (http_requests_in_flight{job=\"germinal_app\"})",
+          "legendFormat": "{{env}}"
         }
       ],
       "fieldConfig": {
