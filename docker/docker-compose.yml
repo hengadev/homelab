@@ -86,6 +86,7 @@ services:
       - BACKUP_S3_BUCKET=${BACKUP_S3_BUCKET}
       - BACKUP_PASSPHRASE=${BACKUP_PASSPHRASE}
       - INFISICAL_DB_PASSWORD=${INFISICAL_DB_PASSWORD}
+      - GLITCHTIP_DB_PASSWORD=${GLITCHTIP_DB_PASSWORD}
     entrypoint:
       - /bin/sh
       - -c
@@ -95,6 +96,7 @@ services:
         crond -f -l 8
     depends_on:
       - infisical-db
+      - glitchtip-db
     restart: unless-stopped
     networks:
       - internal
@@ -196,8 +198,8 @@ services:
       - internal
 
   # ===========================================================================
-  # Observability: metrics, logs and alerts (grafana.henga.dev). The
-  # Germinal VPS pushes to ingest.henga.dev.
+  # Observability: metrics, logs, alerts (grafana.henga.dev) and error
+  # tracking (errors.henga.dev). The Germinal VPS pushes to ingest.henga.dev.
   # ===========================================================================
   # Every service here has a mem_limit (~2 GB in total, ~850 MB used when
   # idle): the box has 4 GB (swap is only a safety net) and runs Woodpecker
@@ -270,6 +272,56 @@ services:
     networks:
       - internal
 
+  # Postgres 14 like infisical-db: the backup container's pg_dump
+  # (postgresql14-client) must not be older than the server. GlitchTip needs 14+.
+  glitchtip-db:
+    image: postgres:14-alpine
+    container_name: homelab-glitchtip-db
+    mem_limit: 256m
+    volumes:
+      - /opt/homelab/data/glitchtip-db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=glitchtip
+      - POSTGRES_PASSWORD=${GLITCHTIP_DB_PASSWORD}
+      - POSTGRES_DB=glitchtip
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U glitchtip -d glitchtip"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - internal
+
+  # All-in-one GlitchTip (web + worker in one process) on Postgres alone: no
+  # Valkey (VALKEY_URL empty), which keeps it near 300 MB of RAM.
+  glitchtip:
+    image: glitchtip/glitchtip:6.2.6
+    container_name: homelab-glitchtip
+    mem_limit: 512m
+    environment:
+      - DATABASE_URL=postgres://glitchtip:${GLITCHTIP_DB_PASSWORD}@glitchtip-db:5432/glitchtip
+      - SECRET_KEY=${GLITCHTIP_SECRET_KEY}
+      - GLITCHTIP_DOMAIN=https://errors.${DOMAIN}
+      - CSRF_TRUSTED_ORIGINS=https://errors.${DOMAIN}
+      - VALKEY_URL=
+      # Web + worker in one process; also runs migrations at start
+      - SERVER_ROLE=all_in_one
+      # No outgoing mail: alerts go through Grafana/Telegram
+      - EMAIL_URL=consolemail://
+      - DEFAULT_FROM_EMAIL=glitchtip@${DOMAIN}
+      # Accounts are created from the CLI (manage.py createsuperuser)
+      - ENABLE_USER_REGISTRATION=False
+      - ENABLE_ORGANIZATION_CREATION=False
+      - GLITCHTIP_ENABLE_UPTIME=False
+      - GLITCHTIP_RETENTION_DAYS=30
+    # Migrations run at start and need the database up, not just started
+    depends_on:
+      glitchtip-db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - internal
 
 networks:
   internal:

@@ -101,6 +101,21 @@ grafana.{$DOMAIN} {
     }
 }
 
+errors.{$DOMAIN} {
+    # GlitchTip: the Germinal app posts its error events here (Sentry SDK),
+    # so the host stays public; the UI itself needs a login.
+    reverse_proxy glitchtip:8000
+    request_body {
+        max_size 20MB
+    }
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy no-referrer
+    }
+}
+
 ingest.{$DOMAIN} {
     # Push endpoint for remote agents (the Alloy agent on the Germinal VPS).
     # INGEST_TOKEN is hex (openssl rand -hex 32), so it needs no escaping.

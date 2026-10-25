@@ -69,6 +69,7 @@ Production-ready, fully reproducible homelab infrastructure deployed with a sing
    - Anki API: `https://anki-api.yourdomain.com`
    - Leviosa demo: `https://leviosa.yourdomain.com`
    - Grafana (dashboards, alerts): `https://grafana.yourdomain.com`
+   - GlitchTip (error tracking): `https://errors.yourdomain.com`
    - Metrics/logs push endpoint (agents only): `https://ingest.yourdomain.com`
 
 ## Environment Variables
@@ -95,6 +96,7 @@ Production-ready, fully reproducible homelab infrastructure deployed with a sing
 | `GRAFANA_ADMIN_PASSWORD` | Grafana `admin` login | `openssl rand -hex 24` |
 | `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` | Where Grafana sends alerts (bot from @BotFather) | — |
 | `INGEST_TOKEN` | Bearer token remote agents push metrics/logs with; hex only | `openssl rand -hex 32` |
+| `GLITCHTIP_DB_PASSWORD` / `GLITCHTIP_SECRET_KEY` | GlitchTip's Postgres password and Django secret | `openssl rand -hex 32` |
 
 ## Day-2 Operations
 

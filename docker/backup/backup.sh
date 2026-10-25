@@ -8,6 +8,7 @@ set -eu
 : "${AWS_SECRET_ACCESS_KEY:?AWS_SECRET_ACCESS_KEY not set}"
 : "${AWS_DEFAULT_REGION:?AWS_DEFAULT_REGION not set}"
 : "${INFISICAL_DB_PASSWORD:?INFISICAL_DB_PASSWORD not set}"
+: "${GLITCHTIP_DB_PASSWORD:?GLITCHTIP_DB_PASSWORD not set}"
 
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 LOG_PREFIX="[$(date -Iseconds)]"
@@ -63,13 +64,14 @@ backup_service "vaultwarden" "/data"
 backup_service "anki" "/anki-data"
 backup_service "woodpecker" "/woodpecker-data"
 backup_postgres "infisical" "infisical-db" "infisical" "infisical" "${INFISICAL_DB_PASSWORD}"
+backup_postgres "glitchtip" "glitchtip-db" "glitchtip" "glitchtip" "${GLITCHTIP_DB_PASSWORD}"
 
 # Prune old backups (keep last 30 days)
 echo "${LOG_PREFIX} Pruning old backups..."
 CUTOFF_DATE=$(date -d @$(( $(date +%s) - 30*86400 )) +%Y%m%d)
 aws s3 ls "s3://${BACKUP_S3_BUCKET}/" | while read -r line; do
     FILE_NAME=$(echo "$line" | awk '{print $4}')
-    FILE_DATE=$(echo "${FILE_NAME}" | sed -n 's/\(vaultwarden\|anki\|woodpecker\|infisical\)_\([0-9]\{8\}\)_.*/\2/p')
+    FILE_DATE=$(echo "${FILE_NAME}" | sed -n 's/\(vaultwarden\|anki\|woodpecker\|infisical\|glitchtip\)_\([0-9]\{8\}\)_.*/\2/p')
     if [ -n "$FILE_DATE" ] && [ "$FILE_DATE" -lt "$CUTOFF_DATE" ]; then
         echo "${LOG_PREFIX} Deleting old backup: ${FILE_NAME}"
         aws s3 rm "s3://${BACKUP_S3_BUCKET}/${FILE_NAME}"

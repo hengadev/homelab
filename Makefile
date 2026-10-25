@@ -34,7 +34,9 @@ ANSIBLE_VARS = -e domain=$(DOMAIN) \
                -e grafana_admin_password=$(GRAFANA_ADMIN_PASSWORD) \
                -e telegram_bot_token=$(TELEGRAM_BOT_TOKEN) \
                -e telegram_chat_id=$(TELEGRAM_CHAT_ID) \
-               -e ingest_token=$(INGEST_TOKEN)
+               -e ingest_token=$(INGEST_TOKEN) \
+               -e glitchtip_db_password=$(GLITCHTIP_DB_PASSWORD) \
+               -e glitchtip_secret_key=$(GLITCHTIP_SECRET_KEY)
 
 # SSH_PUBLIC_KEY contains spaces so it must be passed via a vars file, not -e
 ANSIBLE_SSH_VARS_FILE := /tmp/homelab_ssh_vars.yml

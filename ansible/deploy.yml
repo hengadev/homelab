@@ -76,6 +76,12 @@
         path: /opt/homelab/data/infisical-redis
         state: directory
 
+    # Same as infisical-db: Postgres owns its data directory.
+    - name: Create glitchtip-db data directory
+      ansible.builtin.file:
+        path: /opt/homelab/data/glitchtip-db
+        state: directory
+
     # =========================================================================
     # Vaultwarden restore (skipped when data directory already has content)
     # =========================================================================

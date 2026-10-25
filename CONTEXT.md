@@ -41,16 +41,17 @@ exposed services and their subdomains.
 
 ### Backup
 Nightly encrypted backup of Vaultwarden data, Anki data, and the Infisical
-Postgres database (runs at 03:00 via cron inside the `vaultwarden-backup`
-container). Flow: Vaultwarden/Anki are `tar`'d; Infisical is `pg_dump`'d and
-gzipped — both then go through GPG symmetric encryption (passphrase) →
-upload to S3, and are pruned after 30 days by the script itself. The S3
-bucket (`homelab-backups-henga`) has versioning, SSE-AES256, and a lifecycle
+and GlitchTip Postgres databases (runs at 03:00 via cron inside the
+`vaultwarden-backup` container). Flow: Vaultwarden/Anki are `tar`'d;
+Infisical and GlitchTip are `pg_dump`'d and gzipped — all then go through
+GPG symmetric encryption (passphrase) → upload to S3, and are pruned after
+30 days by the script itself. The S3 bucket (`homelab-backups-henga`) has
+versioning, SSE-AES256, and a lifecycle
 rule (90-day expiration on current objects as a safety net behind the
 script's own pruning, 30-day expiration on noncurrent versions so deleted
 objects don't linger — and cost money — indefinitely under versioning). A
 dedicated IAM user (`homelab-vaultwarden-backup`) scoped to that bucket
-handles credentials for all three backups; it predates Infisical and keeps
+handles credentials for every backup; it predates Infisical and keeps
 its original name.
 
 On a fresh deploy, Ansible auto-restores the latest backup from S3 if the
@@ -92,9 +93,19 @@ remote server.
   Telegram contact point, all provisioned from
   `docker/observability/grafana/`. UI edits to provisioned items are refused:
   change the files and redeploy. Login `admin` / `GRAFANA_ADMIN_PASSWORD`.
+- **GlitchTip** at `errors.henga.dev`: Sentry-compatible error tracking
+  (all-in-one, Postgres only, no Valkey). Its database is in the nightly
+  backup; restore is manual (`zcat … | psql`, same as Infisical's dump).
 
 Metrics, logs and Grafana state are named volumes and are **not** backed
 up: they can be rebuilt, or the config is in this repo.
+
+**Bootstrap (manual, one-time, right after the first deploy):** create the
+GlitchTip account from the CLI, since self-signup stays open until a first
+user exists:
+`docker compose exec glitchtip ./manage.py createsuperuser`. Then create an
+organization, a project per Germinal environment, and copy each DSN into
+Infisical `germinal` → `<env>` → `/sentry` `SENTRY_DSN`.
 
 ### Deploy
 The full service deployment cycle, triggered by `make deploy` or automatically
@@ -150,6 +161,8 @@ containers.
 | `homelab-blackbox-exporter` | `prom/blackbox-exporter` | — (internal) | none |
 | `homelab-loki` | `grafana/loki` | via `ingest.henga.dev` (push) | `loki_data` volume (not backed up) |
 | `homelab-grafana` | `grafana/grafana` | `grafana.henga.dev` | `grafana_data` volume (config provisioned from the repo) |
+| `homelab-glitchtip` | `glitchtip/glitchtip` | `errors.henga.dev` | none (state in glitchtip-db) |
+| `homelab-glitchtip-db` | `postgres:14-alpine` | — (internal) | `/opt/homelab/data/glitchtip-db` (nightly `pg_dump`) |
 
 ---
 
