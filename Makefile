@@ -4,7 +4,7 @@ include .env
 export
 
 SERVER_IP    := $(shell cd terraform && terraform output -raw server_ip 2>/dev/null)
-PORTFOLIO_DIR ?= $(HOME)/Documents/projects/gary/portfolio
+PORTFOLIO_DIR ?= $(HOME)/Documents/projects/portfolio
 
 ANSIBLE_VARS = -e domain=$(DOMAIN) \
                -e admin_token=$(ADMIN_TOKEN) \
@@ -18,6 +18,7 @@ ANSIBLE_VARS = -e domain=$(DOMAIN) \
 	               -e anki_username=$(ANKI_USERNAME) \
 	               -e anki_password=$(ANKI_PASSWORD) \
 	               -e anki_api_key=$(ANKI_API_KEY) \
+               -e brevo_api_key=$(BREVO_API_KEY) \
                -e leviosa_demo_admin_email=$(LEVIOSA_DEMO_ADMIN_EMAIL) \
                -e leviosa_demo_admin_password=$(LEVIOSA_DEMO_ADMIN_PASSWORD) \
                -e leviosa_demo_partner_email=$(LEVIOSA_DEMO_PARTNER_EMAIL) \

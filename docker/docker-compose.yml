@@ -37,6 +37,7 @@ services:
     container_name: homelab-portfolio
     environment:
       - COMING_SOON=false
+      - BREVO_API_KEY=${BREVO_API_KEY}
     restart: unless-stopped
     networks:
       - internal
