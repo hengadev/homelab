@@ -56,5 +56,5 @@ variable "backup_s3_bucket" {
 variable "aws_region" {
   type        = string
   description = "AWS region for the S3 backup bucket"
-  default     = "us-east-1"
+  default     = "eu-west-3"
 }

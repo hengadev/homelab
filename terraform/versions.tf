@@ -17,9 +17,9 @@ terraform {
   }
 
   backend "s3" {
-    bucket       = "henga-homelab-terraform-state"
+    bucket       = "henga-homelab-terraform-state-575"
     key          = "homelab/terraform.tfstate"
-    region       = "us-east-1"
+    region       = "eu-west-3"
     encrypt      = true
     use_lockfile = true
   }

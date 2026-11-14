@@ -45,7 +45,7 @@ and GlitchTip Postgres databases (runs at 03:00 via cron inside the
 `vaultwarden-backup` container). Flow: Vaultwarden/Anki are `tar`'d;
 Infisical and GlitchTip are `pg_dump`'d and gzipped — all then go through
 GPG symmetric encryption (passphrase) → upload to S3, and are pruned after
-30 days by the script itself. The S3 bucket (`homelab-backups-henga`) has
+30 days by the script itself. The S3 bucket (`homelab-backups-henga-575`, eu-west-3) has
 versioning, SSE-AES256, and a lifecycle
 rule (90-day expiration on current objects as a safety net behind the
 script's own pruning, 30-day expiration on noncurrent versions so deleted
