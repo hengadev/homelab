@@ -1,4 +1,4 @@
-.PHONY: help init setup deploy update destroy ssh logs generate-tfvars generate-inventory deploy-portfolio reload-portfolio rebuild-anki-api deploy-demos
+.PHONY: help init setup deploy update destroy ssh logs generate-tfvars generate-inventory deploy-portfolio reload-portfolio rebuild-anki-api deploy-demos deploy-registry
 
 include .env
 export
@@ -37,7 +37,9 @@ ANSIBLE_VARS = -e domain=$(DOMAIN) \
                -e telegram_chat_id=$(TELEGRAM_CHAT_ID) \
                -e ingest_token=$(INGEST_TOKEN) \
                -e glitchtip_db_password=$(GLITCHTIP_DB_PASSWORD) \
-               -e glitchtip_secret_key=$(GLITCHTIP_SECRET_KEY)
+               -e glitchtip_secret_key=$(GLITCHTIP_SECRET_KEY) \
+               -e registry_ci_password=$(REGISTRY_CI_PASSWORD) \
+               -e registry_vps_password=$(REGISTRY_VPS_PASSWORD)
 
 # SSH_PUBLIC_KEY contains spaces so it must be passed via a vars file, not -e
 ANSIBLE_SSH_VARS_FILE := /tmp/homelab_ssh_vars.yml
@@ -131,3 +133,8 @@ deploy-demos: ## Pull latest demo images and restart leviosa-demo
 	@scp -i $(SSH_PRIVATE_KEY_PATH) docker/docker-compose.yml deploy@$(SERVER_IP):/opt/homelab/docker-compose.yml
 	@scp -i $(SSH_PRIVATE_KEY_PATH) docker/Caddyfile deploy@$(SERVER_IP):/opt/homelab/Caddyfile
 	@ssh -i $(SSH_PRIVATE_KEY_PATH) deploy@$(SERVER_IP) "cd /opt/homelab && docker compose pull leviosa-demo && docker compose up -d --no-deps leviosa-demo && docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile"
+
+deploy-registry: generate-inventory ## Install or update the registry (registry.henga.dev) alone
+	$(write-ssh-vars)
+	@ansible-playbook -i ansible/inventory/hosts.yml ansible/deploy.yml --tags registry $(ANSIBLE_VARS) --extra-vars @$(ANSIBLE_SSH_VARS_FILE)
+	@rm -f $(ANSIBLE_SSH_VARS_FILE)

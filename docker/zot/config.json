@@ -1,0 +1,63 @@
+{
+  "distSpecVersion": "1.1.1",
+  "storage": {
+    "rootDirectory": "/var/lib/registry",
+    "dedupe": true,
+    "gc": true,
+    "gcDelay": "1h",
+    "gcInterval": "24h",
+    "retention": {
+      "dryRun": false,
+      "delay": "24h",
+      "policies": [
+        {
+          "repositories": ["**"],
+          "deleteReferrers": true,
+          "deleteUntagged": true,
+          "keepTags": [
+            {
+              "patterns": [".*"],
+              "mostRecentlyPushedCount": 50,
+              "mostRecentlyPulledCount": 10
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "http": {
+    "address": "0.0.0.0",
+    "port": "5000",
+    "realm": "registry.henga.dev",
+    "auth": {
+      "htpasswd": {
+        "path": "/etc/zot/htpasswd"
+      },
+      "failDelay": 5
+    },
+    "accessControl": {
+      "repositories": {
+        "hengadev/cluo-*": {
+          "policies": [
+            {
+              "users": ["cluo-ci"],
+              "actions": ["read", "create", "update"]
+            },
+            {
+              "users": ["cluo-vps"],
+              "actions": ["read"]
+            }
+          ],
+          "defaultPolicy": []
+        }
+      },
+      "adminPolicy": {
+        "users": [],
+        "actions": []
+      }
+    }
+  },
+  "log": {
+    "level": "info"
+  }
+}

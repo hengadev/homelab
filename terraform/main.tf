@@ -286,6 +286,18 @@ resource "cloudflare_record" "errors" {
   proxied  = false
 }
 
+# DNS only: the registry's Caddy site admits the cluo VPS by source IP, and
+# image layers are too large for Cloudflare's proxy.
+resource "cloudflare_record" "registry" {
+  provider = cloudflare.homelab
+  zone_id  = var.cloudflare_zone_id
+  name     = "registry"
+  value    = hcloud_server.homelab.ipv4_address
+  type     = "A"
+  ttl      = 300
+  proxied  = false
+}
+
 resource "cloudflare_record" "ingest" {
   provider = cloudflare.homelab
   zone_id  = var.cloudflare_zone_id

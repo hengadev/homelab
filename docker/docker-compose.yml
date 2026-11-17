@@ -324,6 +324,23 @@ services:
     networks:
       - internal
 
+  # Private OCI registry (registry.henga.dev) for cluo's images. Accounts
+  # in /opt/homelab/zot/htpasswd (written by ansible/deploy.yml), rights in
+  # zot/config.json: cluo-ci pushes, cluo-vps only pulls. Caddy admits only
+  # the cluo VPS and this host. Images are rebuilt from source, so the data
+  # is not backed up.
+  zot:
+    image: ghcr.io/project-zot/zot-linux-amd64:v2.1.23
+    container_name: homelab-zot
+    mem_limit: 512m
+    volumes:
+      - ./zot/config.json:/etc/zot/config.json:ro
+      - ./zot/htpasswd:/etc/zot/htpasswd:ro
+      - /opt/homelab/data/zot:/var/lib/registry
+    restart: unless-stopped
+    networks:
+      - internal
+
 networks:
   internal:
     driver: bridge

@@ -148,3 +148,24 @@ secrets.{$DOMAIN} {
         Referrer-Policy no-referrer
     }
 }
+
+registry.{$DOMAIN} {
+    # Zot, the private registry of cluo's images. Reachable only from the
+    # cluo VPS (it pulls) and this host (Woodpecker's steps push; the hairpin
+    # through Docker arrives from a private address). Zot's own accounts
+    # come on top: cluo-ci pushes, cluo-vps only pulls.
+    @outsider not remote_ip 167.233.109.45 167.235.192.246 private_ranges
+    respond @outsider 403
+    # Image layers can be large: no body limit, long uploads.
+    reverse_proxy zot:5000 {
+        transport http {
+            read_timeout 10m
+            write_timeout 10m
+        }
+    }
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options nosniff
+        -Server
+    }
+}

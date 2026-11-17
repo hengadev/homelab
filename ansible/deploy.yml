@@ -311,6 +311,7 @@
         owner: deploy
         group: deploy
         mode: "0644"
+      tags: [registry]
 
     - name: Create anki build directory
       ansible.builtin.file:
@@ -368,6 +369,66 @@
         group: deploy
         mode: "0644"
       notify: Restart Caddy container
+      tags: [registry]
+
+    # =========================================================================
+    # Registry (registry.henga.dev): `make deploy-registry` runs only the
+    # tasks tagged `registry`.
+    # =========================================================================
+    - name: Create the registry directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0750"
+      loop:
+        - /opt/homelab/zot
+        - /opt/homelab/data/zot
+      tags: [registry]
+
+    - name: Copy the registry config to server
+      ansible.builtin.copy:
+        src: ../docker/zot/config.json
+        dest: /opt/homelab/zot/config.json
+        owner: root
+        group: root
+        mode: "0640"
+      notify: Restart registry container
+      tags: [registry]
+
+    # community.general.htpasswd needs passlib on the server.
+    - name: Install passlib for the registry accounts
+      ansible.builtin.apt:
+        name: [python3-passlib, python3-bcrypt]
+        state: present
+      tags: [registry]
+
+    # Zot reloads its htpasswd file on change: no restart.
+    - name: Write the registry accounts
+      community.general.htpasswd:
+        path: /opt/homelab/zot/htpasswd
+        name: "{{ item.name }}"
+        password: "{{ item.password }}"
+        hash_scheme: bcrypt
+        owner: root
+        group: root
+        mode: "0640"
+      loop:
+        - { name: cluo-ci, password: "{{ registry_ci_password }}" }
+        - { name: cluo-vps, password: "{{ registry_vps_password }}" }
+      loop_control:
+        label: "{{ item.name }}"
+      no_log: true
+      tags: [registry]
+
+    # Caddy picks up the new site through the Caddyfile copy's handler.
+    - name: Start the registry
+      ansible.builtin.command:
+        cmd: docker compose up -d --no-deps zot
+        chdir: /opt/homelab
+      changed_when: true
+      tags: [never, registry]
 
     - name: Copy backup script to server
       ansible.builtin.copy:
@@ -498,6 +559,12 @@
       changed_when: true
 
   handlers:
+    - name: Restart registry container
+      ansible.builtin.command:
+        cmd: docker compose up -d --no-deps --force-recreate zot
+        chdir: /opt/homelab
+      changed_when: true
+
     - name: Restart backup container
       ansible.builtin.command:
         cmd: docker compose restart vaultwarden-backup
