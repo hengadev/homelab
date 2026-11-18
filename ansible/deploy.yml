@@ -430,6 +430,26 @@
       changed_when: true
       tags: [never, registry]
 
+    # =========================================================================
+    # Disk housekeeping. Woodpecker builds pull CI images and leave the images
+    # they build on this host (its Docker daemon does the cluo builds); on
+    # 2026-11-18 they filled the 38 GB disk in a day, Woodpecker's SQLite
+    # database could not be written and running builds were cancelled.
+    # Every night, drop images no container uses and build cache, both older
+    # than a day. Runs with `make deploy-registry` too: the registry and these
+    # images fill the same disk.
+    # =========================================================================
+    - name: Prune unused Docker images and build cache every night
+      ansible.builtin.cron:
+        name: docker-prune
+        user: root
+        hour: "4"
+        minute: "17"
+        job: >-
+          docker image prune -af --filter until=24h >/dev/null &&
+          docker builder prune -af --filter until=24h >/dev/null
+      tags: [housekeeping, registry]
+
     - name: Copy backup script to server
       ansible.builtin.copy:
         src: ../docker/backup/backup.sh
