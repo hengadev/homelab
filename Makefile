@@ -1,4 +1,4 @@
-.PHONY: help init setup deploy update destroy ssh logs generate-tfvars generate-inventory deploy-portfolio reload-portfolio rebuild-anki-api deploy-demos deploy-registry
+.PHONY: help init setup deploy update destroy ssh logs generate-tfvars generate-inventory deploy-portfolio reload-portfolio rebuild-anki-api deploy-demos deploy-registry reload-woodpecker
 
 include .env
 export
@@ -133,6 +133,10 @@ deploy-demos: ## Pull latest demo images and restart leviosa-demo
 	@scp -i $(SSH_PRIVATE_KEY_PATH) docker/docker-compose.yml deploy@$(SERVER_IP):/opt/homelab/docker-compose.yml
 	@scp -i $(SSH_PRIVATE_KEY_PATH) docker/Caddyfile deploy@$(SERVER_IP):/opt/homelab/Caddyfile
 	@ssh -i $(SSH_PRIVATE_KEY_PATH) deploy@$(SERVER_IP) "cd /opt/homelab && docker compose pull leviosa-demo && docker compose up -d --no-deps leviosa-demo && docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile"
+
+reload-woodpecker: ## Copy the compose file and restart the Woodpecker server alone
+	@scp -i $(SSH_PRIVATE_KEY_PATH) docker/docker-compose.yml deploy@$(SERVER_IP):/opt/homelab/docker-compose.yml
+	@ssh -i $(SSH_PRIVATE_KEY_PATH) deploy@$(SERVER_IP) "cd /opt/homelab && docker compose up -d --no-deps woodpecker-server"
 
 deploy-registry: generate-inventory ## Install or update the registry (registry.henga.dev) alone
 	$(write-ssh-vars)

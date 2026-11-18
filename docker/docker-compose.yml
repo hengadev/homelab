@@ -133,6 +133,10 @@ services:
       - WOODPECKER_GITHUB=true
       - WOODPECKER_GITHUB_CLIENT=${WOODPECKER_GITHUB_CLIENT}
       - WOODPECKER_GITHUB_SECRET=${WOODPECKER_GITHUB_SECRET}
+      # Give clone steps GitHub credentials for every repo. Woodpecker v3 reads a
+      # GitHub repo's private flag only at activation, so a repo made private
+      # later (hengadev/cluo) stays "public" and its clones fail without this.
+      - WOODPECKER_AUTHENTICATE_PUBLIC_REPOS=true
       - WOODPECKER_AGENT_SECRET=${WOODPECKER_AGENT_SECRET}
       - WOODPECKER_DATABASE_DRIVER=sqlite3
       - WOODPECKER_DATABASE_DATASOURCE=/var/lib/woodpecker/woodpecker.db
