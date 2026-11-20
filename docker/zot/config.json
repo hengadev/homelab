@@ -17,8 +17,8 @@
           "keepTags": [
             {
               "patterns": [".*"],
-              "mostRecentlyPushedCount": 20,
-              "mostRecentlyPulledCount": 10
+              "mostRecentlyPushedCount": 6,
+              "mostRecentlyPulledCount": 4
             }
           ]
         }
