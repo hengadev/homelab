@@ -77,22 +77,25 @@ live — nothing in this repo consumes Infisical secrets yet, so there's no
 integration to wire up until a specific service needs one.
 
 ### Observability
-Monitoring for apps hosted elsewhere, starting with Germinal
-(`germinalstudio.co`, its own Hetzner VPS). Remote servers **push**: an
-Alloy agent on each sends metrics and logs to `ingest.henga.dev` with a
-bearer token (`INGEST_TOKEN`). Caddy checks the token, then routes
+Monitoring for apps hosted elsewhere: Germinal (`germinalstudio.co`) and
+Leviosa (`livio.leviosa.care`), each on its own Hetzner VPS. Remote servers
+**push**: an Alloy agent on each sends metrics (and logs, for Germinal) to
+`ingest.henga.dev` with a bearer token (`INGEST_TOKEN`). Caddy checks the token, then routes
 `/api/v1/write` to VictoriaMetrics and `/loki/api/v1/push` to Loki. The
 agent strips URL tokens and visitor IPs from logs before they leave the
-remote server.
+remote server. Leviosa's agent pushes **metrics only**, no logs, and its
+app sends nothing to GlitchTip: no client data of the osteopathy practice
+may reach the homelab (`infra/ansible/roles/observability` in that repo).
 
 - **VictoriaMetrics**: metrics, 30 days. It also scrapes the **blackbox
-  exporter**, which checks Germinal's `/api/health` (prod and staging) from
-  outside, through Cloudflare, every 30 s.
+  exporter**, which checks Germinal's `/api/health` and Leviosa's `/healthz`
+  (prod and staging) from outside, through Cloudflare, every 30 s.
 - **Loki**: logs, 30 days.
 - **Grafana** at `grafana.henga.dev`: dashboards, alert rules and the
   Telegram contact point, all provisioned from
-  `docker/observability/grafana/`. UI edits to provisioned items are refused:
-  change the files and redeploy. Login `admin` / `GRAFANA_ADMIN_PASSWORD`.
+  `docker/observability/grafana/`, one Grafana folder per app
+  (`dashboards/<App>/`, the same name as its alert group's folder). UI edits
+  to provisioned items are refused: change the files and redeploy. Login `admin` / `GRAFANA_ADMIN_PASSWORD`.
 - **GlitchTip** at `errors.henga.dev`: Sentry-compatible error tracking
   (all-in-one, Postgres only, no Valkey). Its database is in the nightly
   backup; restore is manual (`zcat … | psql`, same as Infisical's dump).

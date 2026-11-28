@@ -1,6 +1,6 @@
 # VictoriaMetrics' own scrape jobs. Everything else arrives by remote write
-# through ingest.henga.dev (the Germinal VPS pushes: its firewall only lets
-# Cloudflare in, so nothing here could scrape it).
+# through ingest.henga.dev (the Germinal and Leviosa VPSes push: nothing here
+# scrapes them).
 global:
   scrape_interval: 30s
 
@@ -19,6 +19,15 @@ scrape_configs:
       - targets: [https://staging.germinalstudio.co/api/health]
         labels:
           app: germinal
+          env: staging
+      # Leviosa's frontend /healthz: 200 only when the backend answers too.
+      - targets: [https://livio.leviosa.care/healthz]
+        labels:
+          app: leviosa
+          env: prod
+      - targets: [https://staging.leviosa.care/healthz]
+        labels:
+          app: leviosa
           env: staging
     relabel_configs:
       - source_labels: [__address__]

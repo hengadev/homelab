@@ -246,3 +246,228 @@ groups:
         labels: { severity: critical }
         annotations:
           summary: "{{ if lt $values.A.Value 0.0 }}No backup heartbeat has ever reached Grafana (agent not running, or no backup has succeeded since it started){{ else }}No successful Germinal backup for {{ humanize $values.A.Value }} hours{{ end }}"
+
+  - orgId: 1
+    name: leviosa
+    folder: Leviosa
+    interval: 1m
+    rules:
+      # ── Seen from outside (blackbox, through Cloudflare) ─────────────────
+      - uid: leviosa-site-down
+        title: Leviosa site down
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: victoriametrics
+            model:
+              refId: A
+              instant: true
+              expr: min by (env, instance) (probe_success{app="leviosa"})
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: lt, params: [1] }
+        for: 2m
+        noDataState: Alerting
+        execErrState: Error
+        labels: { severity: critical }
+        annotations:
+          summary: "{{ $labels.instance }} has not answered 200 for 2 minutes"
+
+      - uid: leviosa-tls-expiry
+        title: Leviosa TLS certificate expiring
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: victoriametrics
+            model:
+              refId: A
+              instant: true
+              expr: min by (env, instance) ((probe_ssl_earliest_cert_expiry{app="leviosa"} - time()) / 86400)
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: lt, params: [14] }
+        for: 1h
+        noDataState: OK
+        execErrState: Error
+        labels: { severity: warning }
+        annotations:
+          summary: "The certificate served for {{ $labels.instance }} expires in {{ humanize $values.A.Value }} days"
+
+      # ── Seen from inside (the Alloy agent on the Leviosa VPS, metrics only) ────────────
+      - uid: leviosa-metrics-missing
+        title: Leviosa backend metrics missing
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: victoriametrics
+            model:
+              refId: A
+              instant: true
+              # Absent series count as down (0), so a dead agent still
+              # yields one alert per environment, with its env label
+              expr: >-
+                max by (env) (up{job="leviosa_backend"})
+                or label_replace(vector(0), "env", "prod", "", "")
+                or label_replace(vector(0), "env", "staging", "", "")
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: lt, params: [1] }
+        for: 5m
+        noDataState: Alerting
+        execErrState: Error
+        labels: { severity: critical }
+        annotations:
+          summary: "No metrics from the {{ $labels.env }} backend for 5 minutes (app down, or the Alloy agent stopped pushing)"
+
+      - uid: leviosa-5xx
+        title: Leviosa server errors
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: victoriametrics
+            model:
+              refId: A
+              instant: true
+              expr: sum by (env) (increase(leviosa_http_requests_total{job="leviosa_backend", env="prod", status=~"5.."}[10m]))
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [5] }
+        for: 0s
+        noDataState: OK
+        execErrState: Error
+        labels: { severity: warning }
+        annotations:
+          summary: "{{ humanize $values.A.Value }} 5xx responses in production over the last 10 minutes — see the backend's logs on the server"
+
+      - uid: leviosa-restarts
+        title: Leviosa backend restarting
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 1800, to: 0 }
+            datasourceUid: victoriametrics
+            model:
+              refId: A
+              instant: true
+              expr: max by (env) (changes(process_start_time_seconds{job="leviosa_backend"}[30m]))
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [2] }
+        for: 0s
+        noDataState: OK
+        execErrState: Error
+        labels: { severity: warning }
+        annotations:
+          summary: "The {{ $labels.env }} backend restarted {{ $values.A.Value }} times in 30 minutes (crash loop or out of memory?)"
+
+      - uid: leviosa-disk
+        title: Leviosa VPS disk filling up
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: victoriametrics
+            model:
+              refId: A
+              instant: true
+              expr: max by (host, mountpoint) (100 * (1 - node_filesystem_avail_bytes{host="leviosa-vps", fstype!~"tmpfs|overlay|squashfs"} / node_filesystem_size_bytes{host="leviosa-vps", fstype!~"tmpfs|overlay|squashfs"}))
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [85] }
+        for: 10m
+        noDataState: OK
+        execErrState: Error
+        labels: { severity: warning }
+        annotations:
+          summary: "{{ $labels.mountpoint }} is {{ humanize $values.A.Value }}% full"
+
+      - uid: leviosa-memory
+        title: Leviosa VPS memory exhausted
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: victoriametrics
+            model:
+              refId: A
+              instant: true
+              expr: max by (host) (100 * (1 - node_memory_MemAvailable_bytes{host="leviosa-vps"} / node_memory_MemTotal_bytes{host="leviosa-vps"}))
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [90] }
+        for: 10m
+        noDataState: OK
+        execErrState: Error
+        labels: { severity: warning }
+        annotations:
+          summary: "Memory is {{ humanize $values.A.Value }}% used"
+
+      # The backup job writes this heartbeat after a successful run (03:00
+      # Europe/Paris); a day and two hours without one means a run failed.
+      - uid: leviosa-backup-stale
+        title: Leviosa backup missing
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: victoriametrics
+            model:
+              refId: A
+              instant: true
+              # No heartbeat at all reads as -1 (the annotation says so)
+              expr: >-
+                (time() - max(leviosa_backup_last_success_timestamp_seconds)) / 3600
+                or vector(-1)
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: outside_range, params: [0, 26] }
+        for: 0s
+        noDataState: Alerting
+        execErrState: Error
+        labels: { severity: critical }
+        annotations:
+          summary: "{{ if lt $values.A.Value 0.0 }}No backup heartbeat has ever reached Grafana (agent not running, or no backup has succeeded since it started){{ else }}No successful Leviosa backup for {{ humanize $values.A.Value }} hours{{ end }}"

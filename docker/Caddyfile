@@ -117,7 +117,8 @@ errors.{$DOMAIN} {
 }
 
 ingest.{$DOMAIN} {
-    # Push endpoint for remote agents (the Alloy agent on the Germinal VPS).
+    # Push endpoint for remote agents (the Alloy agents on the Germinal and
+    # Leviosa VPSes).
     # INGEST_TOKEN is hex (openssl rand -hex 32), so it needs no escaping.
     # `route` keeps this order: Caddy otherwise runs reverse_proxy before
     # respond, which would skip the token check.

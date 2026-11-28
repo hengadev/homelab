@@ -204,7 +204,8 @@ services:
 
   # ===========================================================================
   # Observability: metrics, logs, alerts (grafana.henga.dev) and error
-  # tracking (errors.henga.dev). The Germinal VPS pushes to ingest.henga.dev.
+  # tracking (errors.henga.dev). The Germinal and Leviosa VPSes push to
+  # ingest.henga.dev.
   # ===========================================================================
   # Every service here has a mem_limit (~2 GB in total, ~850 MB used when
   # idle): the box has 4 GB (swap is only a safety net) and runs Woodpecker
